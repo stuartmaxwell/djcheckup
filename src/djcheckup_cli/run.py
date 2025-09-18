@@ -3,7 +3,7 @@
 import typer
 
 from djcheckup_cli.check_defs import checks
-from djcheckup_cli.check_runner import SiteChecker
+from djcheckup_cli.checks import SiteChecker
 from djcheckup_cli.output_rich import rich_output
 
 app = typer.Typer()

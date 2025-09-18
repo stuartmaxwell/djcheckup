@@ -1,6 +1,6 @@
 """Check definitions."""
 
-from djcheckup_cli.check_types import (
+from djcheckup_cli.checks import (
     ContentCheck,
     CookieCheck,
     CookieHttpOnlyCheck,
@@ -9,8 +9,8 @@ from djcheckup_cli.check_types import (
     HeaderCheck,
     PathCheck,
     SchemeCheck,
+    SeverityWeight,
 )
-from djcheckup_cli.enums import SeverityWeight
 
 admin_check = PathCheck(
     check_id="admin_check",
