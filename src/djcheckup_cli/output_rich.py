@@ -5,7 +5,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
-from djcheckup_cli.checks import CheckResponse
+from djcheckup_cli.checks import CheckResponse, CheckResult
 
 console = Console()
 
@@ -28,6 +28,14 @@ def rich_output(results: list[CheckResponse]) -> None:
     table.add_column("Message", justify="left")
 
     for result in results:
-        table.add_row(result.name, result.result.value.capitalize(), Markdown(result.message))
+        emoji = ""
+        if result.result == CheckResult.SUCCESS:
+            emoji = "🟢 "
+        elif result.result == CheckResult.FAILURE:
+            emoji = "🔴 "
+        elif result.result == CheckResult.SKIPPED:
+            emoji = "🟡 "
+        display_result = emoji + result.result.value.capitalize()
+        table.add_row(result.name, display_result, Markdown(result.message))
 
     console.print(Panel(table))
