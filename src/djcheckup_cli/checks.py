@@ -276,6 +276,13 @@ class PathCheck(_BaseCheck):
         response = context.client.get(new_url)
         logger.info(f"Response status code: {response.status_code}")
 
+        if self.status_code:
+            if response.status_code == self.status_code:
+                logger.debug(f"Request to {new_url} returned expected status code {self.status_code}.")
+                return True
+            logger.debug(f"Request to {new_url} returned unexpected status code {response.status_code}.")
+            return False
+
         if httpx.codes.is_success(response.status_code):
             logger.debug(f"Request to {new_url} succeeded.")
             return True
