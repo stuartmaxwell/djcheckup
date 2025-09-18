@@ -133,7 +133,7 @@ class ContentCheck(_BaseCheck):
 
     def check(self, context: SiteCheckContext) -> bool:
         """Check if the response body contains the expected content."""
-        response_content: str | None = ""
+        response_content: str = ""
 
         if self.path:
             # Append the path to the url
@@ -146,7 +146,7 @@ class ContentCheck(_BaseCheck):
         else:
             response_content = context.content
 
-        if response_content is None:
+        if response_content == "":
             logger.warning("No response content to check.")
             return False
 
@@ -167,7 +167,7 @@ class CookieCheck(_BaseCheck):
 
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is present and optionally if it matches a given value."""
-        if context.cookies is None:
+        if not context.cookies:
             logger.warning("No response cookies to check.")
             return False
 
@@ -195,7 +195,7 @@ class CookieHttpOnlyCheck(_BaseCheck):
 
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is marked as HttpOnly."""
-        if context.cookies is None:
+        if not context.cookies:
             logger.warning("No response cookies to check.")
             return False
 
@@ -216,7 +216,7 @@ class CookieSameSiteCheck(_BaseCheck):
 
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie has a SameSite attribute."""
-        if context.cookies is None:
+        if not context.cookies:
             logger.warning("No response cookies to check.")
             return False
 
@@ -239,7 +239,7 @@ class CookieSecureCheck(_BaseCheck):
 
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is marked as Secure."""
-        if context.cookies is None:
+        if not context.cookies:
             logger.warning("No response cookies to check.")
             return False
 
@@ -388,7 +388,7 @@ class SiteChecker:
         """Run all checks."""
         # First, run the first check
         first_check = self.run_first_check()
-        if first_check.result is False:
+        if first_check.result == CheckResult.FAILURE:
             return [first_check]
 
         # If the first check passes, run all other checks
