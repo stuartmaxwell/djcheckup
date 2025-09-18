@@ -116,10 +116,10 @@ Reference:
 debug_404_check = PathCheck(
     check_id="debug_404_check",
     name="Does your site return a 404 for non-existent pages?",
-    path="/[]/[]/[]/[]/[]/[]-this-tries-to-trigger-404..../",
+    path="/a/b/c/d/e/f/g/h/i/j/xyz/",
     status_code=404,
     success=True,
-    severity=SeverityWeight.CRITICAL,
+    severity=SeverityWeight.MEDIUM,
     success_message="Your site correctly returns a 404 error for non-existent pages.",
     failure_message="""
 Your site does not return a 404 error for non-existent pages. This may indicate a misconfiguration or a custom error
@@ -136,7 +136,7 @@ debug_check = ContentCheck(
     check_id="debug_check",
     depends_on="debug_404_check",
     name="Is Django DEBUG mode disabled?",
-    path="/[]/[]/[]/[]/[]/[]-this-tries-to-trigger-404..../",
+    path="/a/b/c/d/e/f/g/h/i/j/xyz/",
     content="DEBUG = True",
     success=False,
     severity=SeverityWeight.CRITICAL,
@@ -323,6 +323,7 @@ checks = [
     csrf_httponly_check,
     csrf_samesite_check,
     csrf_secure_check,
+    debug_404_check,
     debug_check,
     hsts_header_check,
     http_check,
