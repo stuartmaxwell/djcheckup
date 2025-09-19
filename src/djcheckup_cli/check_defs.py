@@ -317,7 +317,7 @@ Reference:
 )
 
 
-checks = [
+all_checks = [
     admin_check,
     csrf_check,
     csrf_httponly_check,
