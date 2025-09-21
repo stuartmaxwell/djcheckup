@@ -11,10 +11,10 @@ from djcheckup.checks import CheckResult, SeverityWeight, SiteCheckResult
 def custom_encoder(obj: object) -> str | int:
     """Custom JSON encoder for non-serializable types."""
     if isinstance(obj, SeverityWeight):
-        return int(obj.value)
+        return obj.value
 
     if isinstance(obj, CheckResult):
-        return str(obj.value)
+        return obj.value
 
     if isinstance(obj, httpx.URL):
         return str(obj)
