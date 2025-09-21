@@ -51,6 +51,14 @@ class CheckResponse:
     message: str
 
 
+@dataclass
+class SiteCheckResult:
+    """The result of a site check."""
+
+    url: httpx.URL
+    check_results: list[CheckResponse]
+
+
 @dataclass(kw_only=True)
 class _BaseCheck(ABC):
     """Base class for all checks."""
@@ -352,6 +360,11 @@ class SiteChecker:
         """
         logger.info(f"Running first check for {self.url}")
 
+        check_name = "Can I connect to your site?"
+        severity_weight = SeverityWeight.HIGH
+        success_message = "Connected to your site successfully."
+        error_message = "Unable to connect to your site and no further checks can be performed."
+
         try:
             response = self.client.get(self.url)
             response.raise_for_status()
@@ -360,10 +373,10 @@ class SiteChecker:
         except httpx.RequestError:
             logger.exception(f"Error connecting to {self.url}")
             return CheckResponse(
-                name="Can I connect to your site?",
+                name=check_name,
                 result=CheckResult.FAILURE,
-                severity_score=SeverityWeight.HIGH,
-                message="I was unable to connect to the site.",
+                severity_score=severity_weight,
+                message=error_message,
             )
 
         self.context = SiteCheckContext(
@@ -378,30 +391,30 @@ class SiteChecker:
         logger.info(f"Finished first check for {self.url}")
 
         return CheckResponse(
-            name="Can I connect to your site?",
+            name=check_name,
             result=CheckResult.SUCCESS,
-            severity_score=SeverityWeight.NONE,
-            message="I was able to connect to the site.",
+            severity_score=severity_weight,
+            message=success_message,
         )
 
-    def run_checks(self, checks: list[_BaseCheck]) -> list[CheckResponse]:
+    def run_checks(self, checks: list[_BaseCheck]) -> SiteCheckResult:
         """Run all checks."""
         # First, run the first check
         first_check = self.run_first_check()
+        site_check_results = SiteCheckResult(url=self.url, check_results=[first_check])
+
         if first_check.result == CheckResult.FAILURE:
-            return [first_check]
+            return site_check_results
 
         # If the first check passes, run all other checks
-        results: list[CheckResponse] = [first_check]
         previous_results: dict[str, CheckResponse] = {"first_check": first_check}
 
         for check in checks:
             result = check.run(self.context, previous_results)
-            results.append(result)
+            site_check_results.check_results.append(result)
             previous_results[check.check_id] = result
             logger.debug(f"Finished running check: {check.name}")
 
         # Close the HTTP client
         self.client.close()
-
-        return results
+        return site_check_results

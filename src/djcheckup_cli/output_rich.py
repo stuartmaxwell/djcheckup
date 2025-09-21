@@ -5,7 +5,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
-from djcheckup_cli.checks import CheckResponse, CheckResult
+from djcheckup_cli.checks import CheckResult, SiteCheckResult
 
 console = Console()
 
@@ -19,7 +19,7 @@ Rich can do a pretty *decent* job of rendering markdown.
 """
 
 
-def rich_output(results: list[CheckResponse]) -> None:
+def rich_output(check_results: SiteCheckResult) -> None:
     """Display results using Rich."""
     table = Table(title="DJCheckup Results Summary", show_lines=True)
 
@@ -27,7 +27,7 @@ def rich_output(results: list[CheckResponse]) -> None:
     table.add_column("Result", justify="left")
     table.add_column("Message", justify="left")
 
-    for result in results:
+    for result in check_results.check_results:
         emoji = ""
         if result.result == CheckResult.SUCCESS:
             emoji = "🟢 "
