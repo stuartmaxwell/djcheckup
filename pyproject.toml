@@ -18,9 +18,6 @@ Repository = "https://github.com/stuartmaxwell/djcheckup"
 requires = ["uv_build>=0.8.13,<0.9.0"]
 build-backend = "uv_build"
 
-[dependency-groups]
-dev = ["bumpver>=2024.1130"]
-
 [tool.ruff]
 line-length = 120
 target-version = "py313"
@@ -30,15 +27,3 @@ select = ["ALL"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
-
-[tool.bumpver]
-current_version = "0.1.0"
-version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
-commit_message = "👍 bump version {old_version} -> {new_version}"
-commit = true
-push = true
-tag = true
-
-[tool.bumpver.file_patterns]
-"pyproject.toml" = ['version = "{version}"']
-"src/djcheckup_cli/__init__.py" = ['^__version__ = "{version}"$']
