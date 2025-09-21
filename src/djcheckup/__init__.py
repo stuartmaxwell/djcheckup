@@ -9,4 +9,4 @@ logging.basicConfig(level=logging.WARNING, format=FORMAT, datefmt="[%X]", handle
 
 logger = logging.getLogger("rich")
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
