@@ -1,4 +1,10 @@
-# DJ Checkup CLI
+# DJ Checkup
+
+## Overview
+
+DJ Checkup is a security scanner for Django sites. This package provides a command-line interface to run the security
+checks against your Django site. These are the same checks that are used by the DJ Checkup website at
+<https://djcheckup.com>.
 
 ## Installation
 
@@ -6,22 +12,22 @@ This works best when installed with `uv tool` or `pipx`.
 
 ```bash
 # With uv:
-uv tool install djcheckup-cli
+uv tool install djcheckup
 
 # Or with pipx:
-pipx install djcheckup-cli
+pipx install djcheckup
 ```
 
 You can also run the tool without installing it:
 
 ```bash
 # With uvx:
-uvx djcheckup-cli https://yourdjangosite.com
+uvx djcheckup https://yourdjangosite.com
 ```
 
 ## Usage
 
-Run the `djcheckup-cli` command-line utility with the URL of your Django site.
+Run the `djcheckup` command-line utility with the URL of your Django site.
 
 You'll see a nicely formatted report in your terminal:
 
