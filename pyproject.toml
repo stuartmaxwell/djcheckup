@@ -50,8 +50,3 @@ tag = true
 [tool.bumpver.file_patterns]
 "pyproject.toml" = ['version = "{version}"']
 "src/djcheckup_cli/__init__.py" = ['^__version__ = "{version}"$']
-
-[tool.zuban]
-strict = true
-disallow_untyped_defs = true
-warn_unreachable = true
