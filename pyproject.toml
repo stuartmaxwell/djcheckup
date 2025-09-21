@@ -6,6 +6,7 @@ readme = "README.md"
 authors = [{ name = "Stuart Maxwell", email = "stuart@amanzi.nz" }]
 requires-python = ">=3.13"
 dependencies = ["httpx>=0.28.1", "rich>=14.1.0", "typer>=0.17.4"]
+license = { file = "LICENSE" }
 
 [project.scripts]
 djcheckup = "djcheckup.run:app"
