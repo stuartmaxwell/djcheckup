@@ -155,7 +155,7 @@ class ContentCheck(_BaseCheck):
             response_content = context.content
 
         if response_content == "":
-            logger.warning("No response content to check.")
+            logger.info("No response content to check.")
             return False
 
         if self.content not in response_content:
@@ -176,7 +176,7 @@ class CookieCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is present and optionally if it matches a given value."""
         if not context.cookies:
-            logger.warning("No response cookies to check.")
+            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
@@ -204,7 +204,7 @@ class CookieHttpOnlyCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is marked as HttpOnly."""
         if not context.cookies:
-            logger.warning("No response cookies to check.")
+            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
@@ -225,7 +225,7 @@ class CookieSameSiteCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie has a SameSite attribute."""
         if not context.cookies:
-            logger.warning("No response cookies to check.")
+            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
@@ -248,7 +248,7 @@ class CookieSecureCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is marked as Secure."""
         if not context.cookies:
-            logger.warning("No response cookies to check.")
+            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
