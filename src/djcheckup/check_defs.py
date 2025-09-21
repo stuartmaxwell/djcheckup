@@ -1,6 +1,6 @@
 """Check definitions."""
 
-from djcheckup_cli.checks import (
+from djcheckup.checks import (
     ContentCheck,
     CookieCheck,
     CookieHttpOnlyCheck,

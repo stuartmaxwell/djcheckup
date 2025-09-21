@@ -5,7 +5,7 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
-from djcheckup_cli.checks import CheckResult, SiteCheckResult
+from djcheckup.checks import CheckResult, SiteCheckResult
 
 console = Console()
 

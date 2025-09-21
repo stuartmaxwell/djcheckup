@@ -1,7 +1,7 @@
 [project]
-name = "djcheckup-cli"
+name = "djcheckup"
 version = "0.1.0"
-description = "Command line interface for DJ Checkup"
+description = "DJ Checkup is a tool for checking the health of Django applications."
 readme = "README.md"
 authors = [{ name = "Stuart Maxwell", email = "stuart@amanzi.nz" }]
 requires-python = ">=3.13"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-djcheckup-cli = "djcheckup_cli.run:app"
+djcheckup-cli = "djcheckup.run:app"
 
 [build-system]
 requires = ["uv_build>=0.8.13,<0.9.0"]
@@ -50,3 +50,8 @@ tag = true
 [tool.bumpver.file_patterns]
 "pyproject.toml" = ['version = "{version}"']
 "src/djcheckup_cli/__init__.py" = ['^__version__ = "{version}"$']
+
+[tool.zuban]
+strict = true
+disallow_untyped_defs = true
+warn_unreachable = true

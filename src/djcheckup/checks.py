@@ -8,7 +8,7 @@ from typing import Literal
 
 import httpx
 
-from djcheckup_cli import logger
+from djcheckup import logger
 
 
 class SeverityWeight(Enum):
