@@ -15,14 +15,14 @@ app = typer.Typer()
 
 @app.command()
 def run_checks(
-    url: str,
+    url: Annotated[str, typer.Argument(help="The URL to check.")],
     *,
     output_json: Annotated[
         bool,
-        typer.Option(help="Output results in JSON format."),
+        typer.Option(help="Prints the results in JSON format."),
     ] = False,
 ) -> None:
-    """Run all checks for a given URL."""
+    """Run the DJ Checkup tool against a specific URL."""
     checker = SiteChecker(url)
     results = checker.run_checks(all_checks)
 
