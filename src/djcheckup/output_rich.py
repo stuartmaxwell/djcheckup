@@ -7,12 +7,12 @@ from rich.table import Table
 
 from djcheckup.checks import CheckResult, SiteCheckResult
 
-console = Console()
-
 
 def rich_output(check_results: SiteCheckResult) -> None:
     """Display results using Rich."""
-    table = Table(title="DJCheckup Results Summary", show_lines=True)
+    console = Console()
+
+    table = Table(title=f"DJ Checkup Results for {check_results.url}", show_lines=True)
 
     table.add_column("Check", justify="left")
     table.add_column("Result", justify="left")
