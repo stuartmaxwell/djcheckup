@@ -1,23 +1,25 @@
 [project]
 name = "djcheckup"
 version = "0.1.0"
-description = "DJ Checkup is a tool for checking the health of Django applications."
+description = "DJ Checkup is a security scanner for Django sites."
 readme = "README.md"
 authors = [{ name = "Stuart Maxwell", email = "stuart@amanzi.nz" }]
 requires-python = ">=3.13"
-dependencies = [
-    "bumpver>=2025.1131",
-    "httpx>=0.28.1",
-    "rich>=14.1.0",
-    "typer>=0.17.4",
-]
+dependencies = ["httpx>=0.28.1", "rich>=14.1.0", "typer>=0.17.4"]
 
 [project.scripts]
-djcheckup-cli = "djcheckup.run:app"
+djcheckup = "djcheckup.run:app"
+
+[project.urls]
+Homepage = "https://github.com/stuartmaxwell/djcheckup"
+Repository = "https://github.com/stuartmaxwell/djcheckup"
 
 [build-system]
 requires = ["uv_build>=0.8.13,<0.9.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["bumpver>=2024.1130"]
 
 [tool.ruff]
 line-length = 120
@@ -25,16 +27,6 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["ALL"]
-ignore = [
-    "G004",   # Logging statement uses f-string
-    "D203",   # 1 blank line required before class docstring
-    "D213",   # multi-line-summary-second-line
-    "TD003",  # Missing issue link on the line following this TODO
-    "FIX002", # Line contains TODO, consider resolving the issue
-    "TD002",  # Missing author in TODO
-    "S308",   # suspicious-mark-safe-usage
-    "RUF012", # Checks for mutable default values in class attributes. https://github.com/astral-sh/ruff/issues/5243
-]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
