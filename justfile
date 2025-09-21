@@ -37,17 +37,3 @@ uvt := "uv tool run"
 # Run pre-commit hooks
 @pc-run:
     uv tool run pre-commit run --all-files
-
-# Use BumpVer to increase the patch version number. Use just bump -d to view a dry-run.
-@bump *ARGS:
-    uv run bumpver update --patch {{ ARGS }}
-    @just sync
-
-# Use BumpVer to increase the minor version number. Use just bump -d to view a dry-run.
-@bump-minor *ARGS:
-    uv run bumpver update --minor {{ ARGS }}
-    @just sync
-
-@bump-major *ARGS:
-    uv run bumpver update --major {{ ARGS }}
-    @just sync
