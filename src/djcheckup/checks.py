@@ -8,8 +8,6 @@ from typing import Literal
 
 import httpx
 
-from djcheckup import logger
-
 
 class SeverityWeight(Enum):
     """Severity weight for the security score."""
@@ -82,8 +80,6 @@ class _BaseCheck(ABC):
             dependent_result = previous_results.get(self.depends_on)
 
             if not dependent_result or dependent_result.result == CheckResult.FAILURE:
-                logger.info(f"Skipping check '{self.name}' because it depends on failed check '{self.depends_on}'.")
-
                 return CheckResponse(
                     name=self.name,
                     result=CheckResult.SKIPPED,
@@ -116,16 +112,10 @@ class HeaderCheck(_BaseCheck):
         headers = {k.lower(): v for k, v in context.headers.items()}
         actual_value = headers.get(self.header_name.lower())
         if actual_value is None:
-            logger.info(f"Header '{self.header_name}' not found: {context.headers}")
             return False
 
         # Compare header values case-insensitively if header_value is provided
-        if self.header_value and actual_value.lower() != self.header_value.lower():
-            logger.info(f"Header '{self.header_name}' value '{actual_value}' doesn't match '{self.header_value}'.")
-            return False
-
-        logger.debug(f"Header '{self.header_name}' is present with value '{actual_value}'.")
-        return True
+        return not (self.header_value and actual_value.lower() != self.header_value.lower())
 
 
 @dataclass
@@ -146,7 +136,6 @@ class ContentCheck(_BaseCheck):
         if self.path:
             # Append the path to the url
             new_url = httpx.URL(context.url).join(self.path)
-            logger.info(f"Making request to {new_url}")
 
             response = context.client.get(new_url)
             response_content = response.text
@@ -155,15 +144,9 @@ class ContentCheck(_BaseCheck):
             response_content = context.content
 
         if response_content == "":
-            logger.info("No response content to check.")
             return False
 
-        if self.content not in response_content:
-            logger.debug("Response body does not contain expected content.")
-            return False
-
-        logger.debug("Response body contains expected content.")
-        return True
+        return self.content in response_content
 
 
 @dataclass
@@ -176,22 +159,16 @@ class CookieCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is present and optionally if it matches a given value."""
         if not context.cookies:
-            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
             if cookie.name == self.cookie_name:
                 if self.cookie_value and cookie.value == self.cookie_value:
-                    logger.info(
-                        f"Cookie '{self.cookie_name}' value '{cookie.value}' doesn't match '{self.cookie_value}'.",
-                    )
                     return True
 
                 if not self.cookie_value:
-                    logger.debug(f"Cookie '{self.cookie_name}' is present.")
                     return True
 
-        logger.debug(f"Cookie '{self.cookie_name}' is not present.")
         return False
 
 
@@ -204,14 +181,12 @@ class CookieHttpOnlyCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is marked as HttpOnly."""
         if not context.cookies:
-            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
             if cookie.name == self.cookie_name:
                 return cookie.has_nonstandard_attr("HttpOnly")
 
-        logger.info(f"Cookie '{self.cookie_name}' was not found.")
         return False
 
 
@@ -225,14 +200,12 @@ class CookieSameSiteCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie has a SameSite attribute."""
         if not context.cookies:
-            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
             if cookie.name == self.cookie_name:
                 return cookie.get_nonstandard_attr("SameSite") == self.samesite_value
 
-        logger.info(f"Cookie '{self.cookie_name}' was not found.")
         return False
 
 
@@ -248,15 +221,12 @@ class CookieSecureCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie is marked as Secure."""
         if not context.cookies:
-            logger.info("No response cookies to check.")
             return False
 
         for cookie in context.cookies:
             if cookie.name == self.cookie_name:
-                logger.debug(f"Found cookie '{self.cookie_name}': {cookie}, with attributes {cookie.__dict__}")
                 return cookie.secure
 
-        logger.info(f"Cookie '{self.cookie_name}' was not found.")
         return False
 
 
@@ -279,24 +249,13 @@ class PathCheck(_BaseCheck):
         """Makes a request to the specified path and checks the response."""
         # Append the path to the url using the urlib module
         new_url = httpx.URL(context.url).join(self.path)
-        logger.info(f"Making request to {new_url}")
 
         response = context.client.get(new_url)
-        logger.info(f"Response status code: {response.status_code}")
 
         if self.status_code:
-            if response.status_code == self.status_code:
-                logger.debug(f"Request to {new_url} returned expected status code {self.status_code}.")
-                return True
-            logger.debug(f"Request to {new_url} returned unexpected status code {response.status_code}.")
-            return False
+            return response.status_code == self.status_code
 
-        if httpx.codes.is_success(response.status_code):
-            logger.debug(f"Request to {new_url} succeeded.")
-            return True
-
-        logger.debug(f"Request to {new_url} failed with status code {response.status_code}.")
-        return False
+        return bool(httpx.codes.is_success(response.status_code))
 
 
 @dataclass
@@ -316,22 +275,15 @@ class SchemeCheck(_BaseCheck):
         """Check if the scheme of the URL in the request matches the final scheme."""
         # If the start scheme matches the original URL scheme, then we don't need a new request.
         if context.url.scheme == self.start_scheme and context.response_url.scheme == self.end_scheme:
-            logger.debug(f"URL '{context.url}' scheme matches expected scheme '{self.end_scheme}'.")
             return True
 
         # Need to create a new URL with the specified start scheme
         new_url = context.url.copy_with(scheme=self.start_scheme)
-        logger.debug(f"Created new URL '{new_url}' with scheme '{self.end_scheme}'.")
 
         # And make a request to the new URL
         response = context.client.get(new_url)
 
-        if response.url.scheme == self.end_scheme:
-            logger.debug(f"Request to {new_url} succeeded.")
-            return True
-
-        logger.debug(f"URL '{context.url}' matches scheme '{self.start_scheme}' to '{self.end_scheme}'.")
-        return False
+        return response.url.scheme == self.end_scheme
 
 
 class SiteChecker:
@@ -358,8 +310,6 @@ class SiteChecker:
         This connects to the URL using httpx to check connectivity and then saves the page content, headers, and cookies
         into a context object for the remaining checks.
         """
-        logger.info(f"Running first check for {self.url}")
-
         check_name = "Can I connect to your site?"
         severity_weight = SeverityWeight.HIGH
         success_message = "Connected to your site successfully."
@@ -368,10 +318,8 @@ class SiteChecker:
         try:
             response = self.client.get(self.url)
             response.raise_for_status()
-            logger.debug(f"Successfully connected to {self.url}")
 
         except httpx.RequestError:
-            logger.exception(f"Error connecting to {self.url}")
             return CheckResponse(
                 name=check_name,
                 result=CheckResult.FAILURE,
@@ -387,8 +335,6 @@ class SiteChecker:
             content=response.text,
             response_url=response.url,
         )
-
-        logger.info(f"Finished first check for {self.url}")
 
         return CheckResponse(
             name=check_name,
@@ -413,7 +359,6 @@ class SiteChecker:
             result = check.run(self.context, previous_results)
             site_check_results.check_results.append(result)
             previous_results[check.check_id] = result
-            logger.debug(f"Finished running check: {check.name}")
 
         # Close the HTTP client
         self.client.close()
