@@ -15,8 +15,8 @@ def run_checks(url: str, output_format: Literal["json"]) -> str: ...
 
 def run_checks(url: str, output_format: Literal["object", "json"] = "object") -> str | SiteCheckResult:
     """Run the DJ Checkup tool against a specific URL and returns a JSON string."""
-    checker = SiteChecker(url)
-    results = checker.run_checks(all_checks)
+    with SiteChecker(url) as checker:
+        results = checker.run_checks(all_checks)
 
     if output_format not in {"object", "json"}:
         msg = f"Invalid output_format: {output_format!r}. Must be 'object' or 'json'."
