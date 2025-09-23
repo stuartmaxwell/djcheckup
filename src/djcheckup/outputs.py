@@ -1,11 +1,14 @@
-"""Use Rich to display output."""
+"""Output formats for the site check results."""
+
+import json
+from dataclasses import asdict
 
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
-from djcheckup.checks import CheckResult, SiteCheckResult
+from djcheckup.checks import CheckResult, SeverityWeight, SiteCheckResult
 
 
 def rich_output(check_results: SiteCheckResult) -> None:
@@ -30,3 +33,20 @@ def rich_output(check_results: SiteCheckResult) -> None:
         table.add_row(result.name, display_result, Markdown(result.message))
 
     console.print(Panel(table))
+
+
+def json_encoder(obj: object) -> str | int:
+    """Custom JSON encoder for non-serialisable types."""
+    if isinstance(obj, SeverityWeight):
+        return obj.value
+
+    if isinstance(obj, CheckResult):
+        return obj.value
+
+    msg = f"Object of type {type(obj).__name__} is not JSON serialisable"
+    raise TypeError(msg)
+
+
+def output_results_as_json(results: SiteCheckResult) -> str:
+    """Convert the results to JSON format."""
+    return json.dumps(asdict(results), default=json_encoder)
