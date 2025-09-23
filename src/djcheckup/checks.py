@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from http.cookiejar import CookieJar
-from typing import Literal
+from typing import Literal, Self
 
 import httpx
 
@@ -289,20 +289,52 @@ class SchemeCheck(_BaseCheck):
 class SiteChecker:
     """Run all the checks for a given site."""
 
-    def __init__(self, url: str) -> None:
-        """Initialize the SiteChecker with a URL."""
+    def __init__(
+        self,
+        url: str,
+        *,
+        client: httpx.Client | None = None,
+        user_agent: str = "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)",
+        timeout: float = 10.0,
+        follow_redirects: bool = True,
+    ) -> None:
+        """Initialize the SiteChecker with a URL and optional HTTPX client.
+
+        Args:
+            url: The URL to check.
+            client: An optional HTTPX client to use for requests.
+            user_agent: The User-Agent string to use for requests.
+            timeout: The timeout for requests in seconds.
+            follow_redirects: Whether to follow redirects.
+        """
         self.url: httpx.URL = httpx.URL(url)
-        self.user_agent: str = "DJCheckupBot/1.0 (+https://djcheckup.com/bot-info)"
-        self.timeout: float = 10.0
-        self.client: httpx.Client = httpx.Client(
-            headers={"User-Agent": self.user_agent},
-            timeout=self.timeout,
-            follow_redirects=True,
-        )
+        self._client_provided = client is not None
+
+        if client is not None:
+            self.client = client
+        else:
+            self.client = httpx.Client(
+                headers={"User-Agent": user_agent},
+                timeout=timeout,
+                follow_redirects=follow_redirects,
+            )
 
     def close(self) -> None:
-        """Close the HTTP client and release resources."""
-        self.client.close()
+        """Close the HTTP client and release resources.
+
+        Only close the client if it was created by this instance.
+        """
+        if not self._client_provided:
+            self.client.close()
+
+    # Context manager support for automatic cleanup
+    def __enter__(self) -> Self:
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # noqa: ANN001
+        """Context manager exit."""
+        self.close()
 
     def run_first_check(self) -> CheckResponse:
         """Run the first check.
@@ -360,6 +392,4 @@ class SiteChecker:
             site_check_results.check_results.append(result)
             previous_results[check.check_id] = result
 
-        # Close the HTTP client
-        self.client.close()
         return site_check_results
