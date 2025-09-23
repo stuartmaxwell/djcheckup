@@ -1,6 +1,6 @@
 [project]
 name = "djcheckup"
-version = "0.1.3"
+version = "0.2.0"
 description = "DJ Checkup is a security scanner for Django sites."
 readme = "README.md"
 authors = [{ name = "Stuart Maxwell", email = "stuart@amanzi.nz" }]
