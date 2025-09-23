@@ -53,7 +53,7 @@ class CheckResponse:
 class SiteCheckResult:
     """The result of a site check."""
 
-    url: httpx.URL
+    url: str
     check_results: list[CheckResponse]
 
 
@@ -347,7 +347,7 @@ class SiteChecker:
         """Run all checks."""
         # First, run the first check
         first_check = self.run_first_check()
-        site_check_results = SiteCheckResult(url=self.url, check_results=[first_check])
+        site_check_results = SiteCheckResult(url=str(self.url), check_results=[first_check])
 
         if first_check.result == CheckResult.FAILURE:
             return site_check_results
