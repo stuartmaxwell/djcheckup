@@ -7,8 +7,7 @@ import typer
 
 from djcheckup.check_defs import all_checks
 from djcheckup.checks import SiteChecker
-from djcheckup.output_json import output_results_as_json
-from djcheckup.output_rich import rich_output
+from djcheckup.outputs import output_results_as_json, rich_output
 
 app = typer.Typer()
 
