@@ -372,7 +372,7 @@ class SiteChecker:
             response = self.client.get(self.url)
             response.raise_for_status()
 
-        except httpx.RequestError:
+        except httpx.HTTPStatusError:
             return CheckResponse(
                 name=check_name,
                 result=CheckResult.FAILURE,
