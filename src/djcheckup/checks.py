@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from http.cookiejar import CookieJar
-from typing import Literal, Self
+from typing import Literal
 
 import httpx
 
@@ -349,7 +349,7 @@ class SiteChecker:
             self.client.close()
 
     # Context manager support for automatic cleanup
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "SiteChecker":
         """Context manager entry."""
         return self
 
