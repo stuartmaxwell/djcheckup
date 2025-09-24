@@ -274,8 +274,8 @@ class SchemeCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if the scheme of the URL in the request matches the final scheme."""
         # If the start scheme matches the original URL scheme, then we don't need a new request.
-        if context.url.scheme == self.start_scheme and context.response_url.scheme == self.end_scheme:
-            return True
+        if context.url.scheme == self.start_scheme:
+            return context.response_url.scheme == self.end_scheme
 
         # Need to create a new URL with the specified start scheme
         new_url = context.url.copy_with(scheme=self.start_scheme)
