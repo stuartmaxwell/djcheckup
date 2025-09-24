@@ -100,25 +100,6 @@ class _BaseCheck(ABC):
 
 
 @dataclass
-class HeaderCheck(_BaseCheck):
-    """A header check."""
-
-    header_name: str
-    header_value: str = ""
-
-    def check(self, context: SiteCheckContext) -> bool:
-        """Check if a specific header is present and optionally if it matches a given value."""
-        # Normalize header names to lowercase for case-insensitive comparison
-        headers = {k.lower(): v for k, v in context.headers.items()}
-        actual_value = headers.get(self.header_name.lower())
-        if actual_value is None:
-            return False
-
-        # Compare header values case-insensitively if header_value is provided
-        return not (self.header_value and actual_value.lower() != self.header_value.lower())
-
-
-@dataclass
 class ContentCheck(_BaseCheck):
     """A content check.
 
@@ -228,6 +209,25 @@ class CookieSecureCheck(_BaseCheck):
                 return cookie.secure
 
         return False
+
+
+@dataclass
+class HeaderCheck(_BaseCheck):
+    """A header check."""
+
+    header_name: str
+    header_value: str = ""
+
+    def check(self, context: SiteCheckContext) -> bool:
+        """Check if a specific header is present and optionally if it matches a given value."""
+        # Normalize header names to lowercase for case-insensitive comparison
+        headers = {k.lower(): v for k, v in context.headers.items()}
+        actual_value = headers.get(self.header_name.lower())
+        if actual_value is None:
+            return False
+
+        # Compare header values case-insensitively if header_value is provided
+        return not (self.header_value and actual_value.lower() != self.header_value.lower())
 
 
 @dataclass
