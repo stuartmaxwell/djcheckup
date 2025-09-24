@@ -56,7 +56,7 @@ csrf_httponly_check = CookieHttpOnlyCheck(
     depends_on="csrf_check",
     name="Is the CSRF cookie HttpOnly?",
     cookie_name="csrftoken",
-    success=False,
+    success=True,
     severity=SeverityWeight.MEDIUM,
     success_message="Your CSRF cookie is marked as HttpOnly, which helps prevent some XSS attacks.",
     failure_message="""
@@ -211,7 +211,7 @@ Reference:
 login_check = PathCheck(
     check_id="login_check",
     name="Is your login page exposed at a default or guessable URL?",
-    path="/accounts/login/",
+    path="/accounts/login",
     success=False,
     severity=SeverityWeight.MEDIUM,
     success_message="Login page is not exposed at the default URL. This reduces the risk of automated attacks.",

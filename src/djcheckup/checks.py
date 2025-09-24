@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from http.cookiejar import CookieJar
-from typing import Literal, Self
+from typing import Literal
 
 import httpx
 
@@ -97,25 +97,6 @@ class _BaseCheck(ABC):
             severity_score=self.severity,
             message=self.success_message if result == CheckResult.SUCCESS else self.failure_message,
         )
-
-
-@dataclass
-class HeaderCheck(_BaseCheck):
-    """A header check."""
-
-    header_name: str
-    header_value: str = ""
-
-    def check(self, context: SiteCheckContext) -> bool:
-        """Check if a specific header is present and optionally if it matches a given value."""
-        # Normalize header names to lowercase for case-insensitive comparison
-        headers = {k.lower(): v for k, v in context.headers.items()}
-        actual_value = headers.get(self.header_name.lower())
-        if actual_value is None:
-            return False
-
-        # Compare header values case-insensitively if header_value is provided
-        return not (self.header_value and actual_value.lower() != self.header_value.lower())
 
 
 @dataclass
@@ -231,6 +212,25 @@ class CookieSecureCheck(_BaseCheck):
 
 
 @dataclass
+class HeaderCheck(_BaseCheck):
+    """A header check."""
+
+    header_name: str
+    header_value: str = ""
+
+    def check(self, context: SiteCheckContext) -> bool:
+        """Check if a specific header is present and optionally if it matches a given value."""
+        # Normalize header names to lowercase for case-insensitive comparison
+        headers = {k.lower(): v for k, v in context.headers.items()}
+        actual_value = headers.get(self.header_name.lower())
+        if actual_value is None:
+            return False
+
+        # Compare header values case-insensitively if header_value is provided
+        return not (self.header_value and actual_value.lower() != self.header_value.lower())
+
+
+@dataclass
 class PathCheck(_BaseCheck):
     """A path check.
 
@@ -274,8 +274,8 @@ class SchemeCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if the scheme of the URL in the request matches the final scheme."""
         # If the start scheme matches the original URL scheme, then we don't need a new request.
-        if context.url.scheme == self.start_scheme and context.response_url.scheme == self.end_scheme:
-            return True
+        if context.url.scheme == self.start_scheme:
+            return context.response_url.scheme == self.end_scheme
 
         # Need to create a new URL with the specified start scheme
         new_url = context.url.copy_with(scheme=self.start_scheme)
@@ -349,7 +349,7 @@ class SiteChecker:
             self.client.close()
 
     # Context manager support for automatic cleanup
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "SiteChecker":
         """Context manager entry."""
         return self
 
@@ -372,7 +372,7 @@ class SiteChecker:
             response = self.client.get(self.url)
             response.raise_for_status()
 
-        except httpx.RequestError:
+        except httpx.HTTPStatusError:
             return CheckResponse(
                 name=check_name,
                 result=CheckResult.FAILURE,
