@@ -4,6 +4,7 @@ import httpx
 import pytest
 
 from src.djcheckup.checks import (
+    CheckResult,
     ContentCheck,
     CookieCheck,
     CookieHttpOnlyCheck,
@@ -37,7 +38,7 @@ def mock_response_404(request: httpx.Request) -> httpx.Response:
     """Return a fake response for any request."""
     return httpx.Response(
         status_code=404,
-        content="Test response content.",
+        content="Page not found.",
     )
 
 
@@ -52,6 +53,14 @@ def mock_response_redirect_to_https(request: httpx.Request) -> httpx.Response:
     return httpx.Response(
         status_code=200,
         content="Test response content.",
+    )
+
+
+def mock_empty_response(request: httpx.Request) -> httpx.Response:
+    """Return a fake response with no content."""
+    return httpx.Response(
+        status_code=200,
+        content="",
     )
 
 
@@ -77,6 +86,13 @@ def mock_client_redirect():
 
 
 @pytest.fixture
+def mock_client_empty():
+    """Return a mock HTTP client."""
+    mock_transport = httpx.MockTransport(mock_empty_response)
+    return httpx.Client(transport=mock_transport)
+
+
+@pytest.fixture
 def context(mock_client):
     """Create a SiteCheckContext context object."""
     response = mock_client.get(url)
@@ -97,6 +113,13 @@ def context_redirect(mock_client_redirect):
     return create_context(url=httpx.URL(url), client=mock_client_redirect, response=response)
 
 
+@pytest.fixture
+def context_empty(mock_client_empty):
+    """Create a SiteCheckContext context object."""
+    response = mock_client_empty.get(url)
+    return create_context(url=httpx.URL(url), client=mock_client_empty, response=response)
+
+
 def test_content_check(context):
     """Test the content check where the content exists."""
     content_check = ContentCheck(
@@ -110,6 +133,21 @@ def test_content_check(context):
     )
 
     assert content_check.check(context) is True
+
+
+def test_content_check_empty(context_empty):
+    """Test the content check where the content is empty."""
+    content_check = ContentCheck(
+        check_id="content_check",
+        name="Test Content Check",
+        content="Test response content",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert content_check.check(context_empty) is False
 
 
 def test_content_check_fail(context):
@@ -172,6 +210,21 @@ def test_cookie_check(context):
     )
 
     assert cookie_check.check(context) is True
+
+
+def test_cookie_check_empty(context_empty):
+    """Test the cookie check where there are no cookies."""
+    cookie_check = CookieCheck(
+        check_id="cookie_check",
+        name="Test Cookie Check",
+        cookie_name="test-simple-cookie1",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert cookie_check.check(context_empty) is False
 
 
 def test_cookie_check_fail(context):
@@ -252,6 +305,38 @@ def test_cookie_httponly_check(context):
     assert cookie_httponly_check.check(context) is True
 
 
+def test_cookie_httponly_check_depends_on(context):
+    """Test the cookie HttpOnly check where the depends on a test that hasn't run."""
+    cookie_httponly_check = CookieHttpOnlyCheck(
+        check_id="cookie_httponly_check",
+        depends_on="cookie_check",
+        name="Test Cookie HttpOnly Check",
+        cookie_name="test-complex-cookie2",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    check_result = cookie_httponly_check.run(context, previous_results={})
+    assert check_result.result.value == CheckResult.SKIPPED.value
+
+
+def test_cookie_httponly_check_empty(context_empty):
+    """Test the cookie HttpOnly check where there are no cookies."""
+    cookie_httponly_check = CookieHttpOnlyCheck(
+        check_id="cookie_httponly_check",
+        name="Test Cookie HttpOnly Check",
+        cookie_name="test-complex-cookie2",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert cookie_httponly_check.check(context_empty) is False
+
+
 def test_cookie_httponly_check_fail(context):
     """Test the cookie HttpOnly check where the cookie is not marked as HttpOnly."""
     cookie_httponly_check_fail = CookieHttpOnlyCheck(
@@ -296,6 +381,22 @@ def test_cookie_samesite_strict_check(context):
     )
 
     assert cookie_samesite_strict_check.check(context) is True
+
+
+def test_cookie_samesite_strict_check_empty(context_empty):
+    """Test the cookie SameSite check where the cookie is marked as SameSite=Strict."""
+    cookie_samesite_strict_check = CookieSameSiteCheck(
+        check_id="cookie_samesite_strict_check",
+        name="Test Cookie SameSite Check",
+        cookie_name="test-complex-cookie2",
+        samesite_value="Strict",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert cookie_samesite_strict_check.check(context_empty) is False
 
 
 def test_cookie_samesite_lax_check_fail(context):
@@ -375,6 +476,21 @@ def test_cookie_secure_check(context):
     )
 
     assert cookie_secure_check.check(context) is True
+
+
+def test_cookie_secure_check_empty(context_empty):
+    """Test the cookie Secure check where the cookie is marked as Secure."""
+    cookie_secure_check = CookieSecureCheck(
+        check_id="cookie_secure_check",
+        name="Test Cookie Secure Check",
+        cookie_name="test-complex-cookie2",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert cookie_secure_check.check(context_empty) is False
 
 
 def test_cookie_secure_check_fail(context):
