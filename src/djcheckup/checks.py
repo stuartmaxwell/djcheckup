@@ -286,6 +286,27 @@ class SchemeCheck(_BaseCheck):
         return response.url.scheme == self.end_scheme
 
 
+def create_context(url: httpx.URL, client: httpx.Client, response: httpx.Response) -> SiteCheckContext:
+    """Create a SiteCheckContext context object.
+
+    Args:
+        url: The URL to check.
+        client: The HTTPX client to use for requests.
+        response: The HTTPX response object from the initial request.
+
+    Returns:
+        A SiteCheckContext object containing the provided parameters.
+    """
+    return SiteCheckContext(
+        url=url,
+        client=client,
+        headers=response.headers,
+        cookies=response.cookies.jar,
+        content=response.text,
+        response_url=response.url,
+    )
+
+
 class SiteChecker:
     """Run all the checks for a given site."""
 
@@ -359,14 +380,7 @@ class SiteChecker:
                 message=error_message,
             )
 
-        self.context = SiteCheckContext(
-            url=self.url,
-            client=self.client,
-            headers=response.headers,
-            cookies=response.cookies.jar,
-            content=response.text,
-            response_url=response.url,
-        )
+        self.context = create_context(self.url, self.client, response)
 
         return CheckResponse(
             name=check_name,
