@@ -11,6 +11,7 @@ from src.djcheckup.checks import (
     CookieSecureCheck,
     HeaderCheck,
     PathCheck,
+    SchemeCheck,
     SeverityWeight,
     create_context,
 )
@@ -40,6 +41,20 @@ def mock_response_404(request: httpx.Request) -> httpx.Response:
     )
 
 
+def mock_response_redirect_to_https(request: httpx.Request) -> httpx.Response:
+    """Return a fake response for any request."""
+    if request.url.scheme == "http":
+        return httpx.Response(
+            status_code=301,
+            headers={"Location": str(request.url.copy_with(scheme="https"))},
+            request=request,
+        )
+    return httpx.Response(
+        status_code=200,
+        content="Test response content.",
+    )
+
+
 @pytest.fixture
 def mock_client():
     """Return a mock HTTP client."""
@@ -55,6 +70,13 @@ def mock_client_404():
 
 
 @pytest.fixture
+def mock_client_redirect():
+    """Return a mock HTTP client."""
+    mock_transport = httpx.MockTransport(mock_response_redirect_to_https)
+    return httpx.Client(transport=mock_transport, follow_redirects=True)
+
+
+@pytest.fixture
 def context(mock_client):
     """Create a SiteCheckContext context object."""
     response = mock_client.get(url)
@@ -66,6 +88,13 @@ def context_404(mock_client_404):
     """Create a SiteCheckContext context object."""
     response = mock_client_404.get(url)
     return create_context(url=httpx.URL(url), client=mock_client_404, response=response)
+
+
+@pytest.fixture
+def context_redirect(mock_client_redirect):
+    """Create a SiteCheckContext context object."""
+    response = mock_client_redirect.get(url)
+    return create_context(url=httpx.URL(url), client=mock_client_redirect, response=response)
 
 
 def test_content_check(context):
@@ -516,3 +545,67 @@ def test_path_check_404_fail(context_404):
     )
 
     assert path_check_404_fail.check(context_404) is False
+
+
+def test_scheme_check(context):
+    """Test the scheme check where the start and end scheme is https."""
+    scheme_check = SchemeCheck(
+        check_id="scheme_check",
+        name="Test Scheme Check",
+        start_scheme="https",
+        end_scheme="https",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert scheme_check.check(context) is True
+
+
+def test_scheme_check_http(context):
+    """Test the scheme check where the start and end scheme is https."""
+    scheme_check = SchemeCheck(
+        check_id="scheme_check",
+        name="Test Scheme Check",
+        start_scheme="http",
+        end_scheme="http",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert scheme_check.check(context) is True
+
+
+def test_scheme_check_fail_https_http(context_redirect):
+    """Test the scheme check where the start scheme is https and end scheme is http."""
+    scheme_check_fail_https_http = SchemeCheck(
+        check_id="scheme_check_fail_https_http",
+        name="Test Scheme Check",
+        start_scheme="https",
+        end_scheme="http",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert scheme_check_fail_https_http.check(context_redirect) is False
+
+
+def test_scheme_check_fail_http_https(context_redirect):
+    """Test the scheme check where the start scheme is http and end scheme is https."""
+    scheme_check_fail_http_https = SchemeCheck(
+        check_id="scheme_check_fail_http_https",
+        name="Test Scheme Check",
+        start_scheme="http",
+        end_scheme="https",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert scheme_check_fail_http_https.check(context_redirect) is True
