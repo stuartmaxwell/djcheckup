@@ -211,7 +211,7 @@ Reference:
 login_check = PathCheck(
     check_id="login_check",
     name="Is your login page exposed at a default or guessable URL?",
-    path="/accounts/login/",
+    path="/accounts/login",
     success=False,
     severity=SeverityWeight.MEDIUM,
     success_message="Login page is not exposed at the default URL. This reduces the risk of automated attacks.",
