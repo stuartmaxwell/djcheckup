@@ -72,3 +72,7 @@ version := `echo "from tomllib import load; print(load(open('pyproject.toml', 'r
 @cov-html:
     {{uvr}} -m pytest --cov --cov-report=html --cov-context=test
     echo Coverage report: file://`pwd`/htmlcov/index.html
+
+# Run nox
+@nox:
+    {{uvr}} nox --session test

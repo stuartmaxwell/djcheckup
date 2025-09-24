@@ -4,7 +4,7 @@ version = "0.2.2"
 description = "DJ Checkup is a security scanner for Django sites."
 readme = "README.md"
 authors = [{ name = "Stuart Maxwell", email = "stuart@amanzi.nz" }]
-requires-python = ">=3.13"
+requires-python = ">=3.10"
 dependencies = ["httpx>=0.28.1", "rich>=14.1.0", "typer>=0.17.4"]
 license = { file = "LICENSE" }
 
@@ -33,7 +33,7 @@ select = ["ALL"]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
 
 [dependency-groups]
-dev = ["pytest>=8.4.2", "pytest-cov>=7.0.0"]
+dev = ["nox>=2025.5.1", "pytest>=8.4.2", "pytest-cov>=7.0.0"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
