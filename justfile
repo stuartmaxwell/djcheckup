@@ -6,18 +6,18 @@
 python_version := "3.13"
 
 # Set the uv run command
-uvr := "uv run"
+uvr := "uv run  --group dev"
 
 #Set the uv command to run a tool
 uvt := "uv tool run"
 
 # Sync the package
 @sync:
-    uv sync
+    uv sync --group dev
 
 # Sync the package
 @sync-up:
-    uv sync --upgrade
+    uv sync --upgrade  --group dev
 
 # Build the package
 @build:
@@ -59,3 +59,7 @@ version := `echo "from tomllib import load; print(load(open('pyproject.toml', 'r
 @version:
     git pull
     echo {{version}}
+
+# Run pytest
+@test *ARGS:
+    {{uvr}} pytest {{ ARGS }}
