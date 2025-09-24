@@ -26,5 +26,15 @@ target-version = "py313"
 [tool.ruff.lint]
 select = ["ALL"]
 
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**" = ["S101", "ANN201", "ANN001", "ARG001"]
+
 [tool.ruff.lint.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
+
+[dependency-groups]
+dev = ["pytest>=8.4.2"]
+
+[tool.pytest.ini_options]
+pythonpath = "."
+python_files = "test_*.py"
