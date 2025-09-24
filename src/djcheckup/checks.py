@@ -1,6 +1,7 @@
 """Check types."""
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from http.cookiejar import CookieJar
@@ -389,8 +390,15 @@ class SiteChecker:
             message=success_message,
         )
 
-    def run_checks(self, checks: list[_BaseCheck]) -> SiteCheckResult:
-        """Run all checks."""
+    def run_checks(self, checks: Sequence[_BaseCheck]) -> SiteCheckResult:
+        """Run all checks.
+
+        Args:
+            checks: Accepts any sequence (list, tuple, etc.) of check instances inheriting from _BaseCheck.
+
+        Returns:
+            A SiteCheckResult object containing the results of all checks.
+        """
         # First, run the first check
         first_check = self.run_first_check()
         site_check_results = SiteCheckResult(url=str(self.url), check_results=[first_check])
