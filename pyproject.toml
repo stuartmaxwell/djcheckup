@@ -33,8 +33,18 @@ select = ["ALL"]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
 
 [dependency-groups]
-dev = ["pytest>=8.4.2"]
+dev = ["pytest>=8.4.2", "pytest-cov>=7.0.0"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
 python_files = "test_*.py"
+
+[tool.coverage.html]
+show_contexts = true
+
+[tool.coverage.run]
+branch = true
+include = ["src/djcheckup/*"]
+
+[tool.coverage.report]
+# exclude_lines = ["if TYPE_CHECKING:", "# pragma: no cover"]
