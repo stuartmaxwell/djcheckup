@@ -30,18 +30,13 @@ select = ["ALL"]
 project-includes = ["src/djcheckup/**"]
 
 [tool.ruff.lint.extend-per-file-ignores]
-"tests/**" = ["S101", "ANN201", "ANN001", "ARG001"]
+"tests/**" = ["S101", "ANN201", "ANN001", "ARG001", "PT011", "PGH003", "SLF001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
 
 [dependency-groups]
-dev = [
-    "nox>=2025.5.1",
-    "pyrefly>=0.34.0",
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-]
+dev = ["nox>=2025.5.1", "pyrefly>=0.34.0", "pytest>=8.4.2", "pytest-cov>=7.0.0"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
@@ -52,7 +47,7 @@ show_contexts = true
 
 [tool.coverage.run]
 branch = true
-include = ["src/djcheckup/*"]
+include = ["src/djcheckup/**"]
 
 [tool.coverage.report]
 # exclude_lines = ["if TYPE_CHECKING:", "# pragma: no cover"]
