@@ -3,7 +3,7 @@
 import httpx
 import pytest
 
-from src.djcheckup.checks import CheckResult, SiteChecker
+from djcheckup.checks import CheckResult, SiteChecker
 
 url = "https://example.com"
 
@@ -61,3 +61,17 @@ def test_first_check_fails(mock_client_404):
     # Assert the check failed (header is missing)
     assert result.check_results[0].name == "Can I connect to your site?"
     assert result.check_results[0].result.value == CheckResult.FAILURE.value
+
+
+def test_sitechecker_init(mock_client, monkeypatch):
+    """Test the SiteChecker class when not getting a custom HTTPX client passed to it."""
+
+    def mock_httpx_client(*_args: object, **_kwargs: object) -> httpx.Client:
+        return mock_client
+
+    monkeypatch.setattr("httpx.Client", mock_httpx_client)
+
+    checker = SiteChecker(url=url)
+    assert checker._client_provided is False
+    checker.close()
+    assert checker.client.is_closed
