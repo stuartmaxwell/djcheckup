@@ -3,8 +3,8 @@
 import httpx
 import pytest
 
-from src.djcheckup.check_defs import all_checks
-from src.djcheckup.checks import CheckResult, SiteChecker
+from djcheckup.check_defs import all_checks
+from djcheckup.checks import CheckResult, SiteChecker
 
 url = "https://example.com"
 

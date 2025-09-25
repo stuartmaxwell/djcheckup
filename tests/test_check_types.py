@@ -3,7 +3,7 @@
 import httpx
 import pytest
 
-from src.djcheckup.checks import (
+from djcheckup.checks import (
     CheckResult,
     ContentCheck,
     CookieCheck,

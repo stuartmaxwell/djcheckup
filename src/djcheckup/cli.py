@@ -22,14 +22,10 @@ def run_checks(
     ] = False,
 ) -> None:
     """Run the DJ Checkup tool against a specific URL."""
-    checker = SiteChecker(url)
+    checker = SiteChecker(url=url)
     results = checker.run_checks(all_checks)
 
     if output_json:
         rich.print_json(output_results_as_json(results))
     else:
         rich_output(results)
-
-
-if __name__ == "__main__":
-    app()

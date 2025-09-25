@@ -25,10 +25,13 @@ def rich_output(check_results: SiteCheckResult) -> None:
         emoji = ""
         if result.result == CheckResult.SUCCESS:
             emoji = "🟢 "
-        elif result.result == CheckResult.FAILURE:
+
+        if result.result == CheckResult.FAILURE:
             emoji = "🔴 "
-        elif result.result == CheckResult.SKIPPED:
+
+        if result.result == CheckResult.SKIPPED:
             emoji = "🟡 "
+
         display_result = emoji + result.result.value.capitalize()
         table.add_row(result.name, display_result, Markdown(result.message))
 
@@ -43,8 +46,9 @@ def json_encoder(obj: object) -> str | int:
     if isinstance(obj, CheckResult):
         return obj.value
 
-    msg = f"Object of type {type(obj).__name__} is not JSON serialisable"
-    raise TypeError(msg)
+    # The following should never happen since this encoder is only used for SeverityWeight and CheckResult
+    msg = f"Object of type {type(obj).__name__} is not JSON serialisable"  # pragma: no cover
+    raise TypeError(msg)  # pragma: no cover
 
 
 def output_results_as_json(results: SiteCheckResult) -> str:
