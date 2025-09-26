@@ -5,8 +5,8 @@ from typing import Literal, overload
 import httpx
 
 from djcheckup.check_defs import all_checks
-from djcheckup.checks import SiteChecker, SiteCheckResult
-from djcheckup.outputs import output_results_as_json
+from djcheckup.checks import SiteChecker
+from djcheckup.outputs import SiteCheckResultDict, sitecheck_as_dict, sitecheck_as_json
 
 
 @overload
@@ -14,7 +14,7 @@ def run_checks(
     url: str,
     output_format: Literal["object"] = "object",
     client: httpx.Client | None = None,
-) -> SiteCheckResult: ...
+) -> SiteCheckResultDict: ...
 @overload
 def run_checks(url: str, output_format: Literal["json"], client: httpx.Client | None = None) -> str: ...
 
@@ -23,7 +23,7 @@ def run_checks(
     url: str,
     output_format: Literal["object", "json"] = "object",
     client: httpx.Client | None = None,
-) -> str | SiteCheckResult:
+) -> str | SiteCheckResultDict:
     """Run the DJ Checkup tool.
 
     Args:
@@ -42,7 +42,7 @@ def run_checks(
         raise ValueError(msg)
 
     if output_format == "json":
-        return output_results_as_json(results)
+        return sitecheck_as_json(results)
 
     # Default to object output
-    return results
+    return sitecheck_as_dict(results)

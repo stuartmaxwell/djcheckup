@@ -1,14 +1,33 @@
 """Output formats for the site check results."""
 
 import json
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict
+from enum import Enum
+from typing import TypedDict
 
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
-from djcheckup.checks import CheckResult, SeverityWeight, SiteCheckResult
+from djcheckup.checks import CheckResult, SiteCheckResult
+
+
+class CheckResponseDict(TypedDict):
+    """Represents the response for a single check."""
+
+    name: str
+    result: str  # from CheckResult
+    severity_score: int  # from SeverityWeight
+    message: str
+
+
+class SiteCheckResultDict(TypedDict):
+    """Represents the response for a site check."""
+
+    url: str
+    check_results: list[CheckResponseDict]
 
 
 def rich_output(check_results: SiteCheckResult) -> None:
@@ -38,19 +57,40 @@ def rich_output(check_results: SiteCheckResult) -> None:
     console.print(Panel(table))
 
 
-def json_encoder(obj: object) -> str | int:
-    """Custom JSON encoder for non-serialisable types."""
-    if isinstance(obj, SeverityWeight):
+type JSONValue = str | int | Mapping[str, "JSONValue"] | Sequence["JSONValue"]
+
+
+def normalize_for_json(obj: JSONValue) -> JSONValue:
+    """Recursively convert a dict with Enums to a json-serialisable dict.
+
+    This is used to convert the SiteCheckResult object to one that can be converted directly to JSON.
+    """
+    # dict-like objects
+    if isinstance(obj, Mapping):
+        return {k: normalize_for_json(v) for k, v in obj.items()}
+
+    # list-like objects
+    if isinstance(obj, Sequence) and not isinstance(obj, (str, bytes, bytearray)):
+        return [normalize_for_json(v) for v in obj]
+
+    # Enums, e.g. SeverityWeight and CheckResult
+    if isinstance(obj, Enum):
         return obj.value
 
-    if isinstance(obj, CheckResult):
-        return obj.value
+    if isinstance(obj, (str, int)):
+        return obj
 
-    # The following should never happen since this encoder is only used for SeverityWeight and CheckResult
-    msg = f"Object of type {type(obj).__name__} is not JSON serialisable"  # pragma: no cover
+    # The following code should never be reached
+    msg = f"Unexpected type: {type(obj)}"  # pragma: no cover
     raise TypeError(msg)  # pragma: no cover
 
 
-def output_results_as_json(results: SiteCheckResult) -> str:
-    """Convert the results to JSON format."""
-    return json.dumps(asdict(results), default=json_encoder)
+def sitecheck_as_dict(site_result: SiteCheckResult) -> SiteCheckResultDict:
+    """Convert SiteCheckResult into JSON-serialisable dict."""
+    return normalize_for_json(asdict(site_result))  # type: ignore  # noqa: PGH003
+
+
+def sitecheck_as_json(site_result: SiteCheckResult) -> str:
+    """Convert SiteCheckResult into JSON string."""
+    data = sitecheck_as_dict(site_result)
+    return json.dumps(data)
