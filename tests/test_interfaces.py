@@ -4,7 +4,6 @@ import httpx
 import pytest
 from typer.testing import CliRunner
 
-from djcheckup.checks import SiteCheckResult
 from djcheckup.cli import app
 from djcheckup.run import run_checks
 
@@ -127,7 +126,9 @@ def test_cli_json_output(mock_perfect_client, monkeypatch):
 def test_run_checks_command(mock_perfect_client):
     """Test the run_checks command with mocked HTTP client."""
     result = run_checks(url, client=mock_perfect_client)
-    assert isinstance(result, SiteCheckResult)
+    assert isinstance(result, dict)
+    assert "url" in result
+    assert "check_results" in result
 
 
 def test_run_checks_command_json(mock_perfect_client):

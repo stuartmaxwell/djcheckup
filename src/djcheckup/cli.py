@@ -7,7 +7,7 @@ import typer
 
 from djcheckup.check_defs import all_checks
 from djcheckup.checks import SiteChecker
-from djcheckup.outputs import output_results_as_json, rich_output
+from djcheckup.outputs import rich_output, sitecheck_as_json
 
 app = typer.Typer()
 
@@ -26,6 +26,6 @@ def run_checks(
     results = checker.run_checks(all_checks)
 
     if output_json:
-        rich.print_json(output_results_as_json(results))
+        rich.print_json(sitecheck_as_json(results))
     else:
         rich_output(results)
