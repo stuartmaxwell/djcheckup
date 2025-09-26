@@ -374,18 +374,23 @@ class SiteChecker:
         check_name = "Can I connect to your site?"
         severity_weight = SeverityWeight.HIGH
         success_message = "Connected to your site successfully."
-        error_message = "Unable to connect to your site and no further checks can be performed."
+        error_message = """
+Unable to connect to your site and no further checks can be performed.
+
+Error message:
+
+"""
 
         try:
             response = self.client.get(self.url)
             response.raise_for_status()
 
-        except httpx.HTTPStatusError:
+        except (httpx.HTTPStatusError, httpx.ConnectError) as e:
             return CheckResponse(
                 name=check_name,
                 result=CheckResult.FAILURE,
                 severity_score=severity_weight,
-                message=error_message,
+                message=f"{error_message} ```\n{e}```",
             )
 
         self.context = create_context(self.url, self.client, response)
