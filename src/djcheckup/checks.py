@@ -174,10 +174,14 @@ class CookieHttpOnlyCheck(_BaseCheck):
 
 @dataclass
 class CookieSameSiteCheck(_BaseCheck):
-    """A cookie SameSite check."""
+    """A cookie SameSite check.
+
+    Checks that the cookie has the expected SameSite value.
+    If the `samesite_value` is omitted, then it checks if the value is set to Lax or Strict.
+    """
 
     cookie_name: str
-    samesite_value: Literal["Strict", "Lax", "None"]
+    samesite_value: Literal["Strict", "Lax", "None"] | None = None
 
     def check(self, context: SiteCheckContext) -> bool:
         """Check if a specific cookie has a SameSite attribute."""
@@ -186,6 +190,9 @@ class CookieSameSiteCheck(_BaseCheck):
 
         for cookie in context.cookies:
             if cookie.name == self.cookie_name:
+                if not self.samesite_value:
+                    return cookie.get_nonstandard_attr("SameSite") in ["Lax", "Strict"]
+
                 return cookie.get_nonstandard_attr("SameSite") == self.samesite_value
 
         return False

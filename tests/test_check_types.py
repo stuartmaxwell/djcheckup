@@ -367,6 +367,42 @@ def test_cookie_httponly_check_missing_cookie(context):
     assert cookie_httponly_check_missing_cookie.check(context) is False
 
 
+def test_cookie_samesite_check(context):
+    """Test the cookie SameSite check where no attribute is given.
+
+    This will check if the value is set to Lax or Strict.
+    """
+    cookie_samesite_check = CookieSameSiteCheck(
+        check_id="cookie_samesite_check",
+        name="Test Cookie SameSite Check",
+        cookie_name="test-complex-cookie2",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert cookie_samesite_check.check(context) is True
+
+
+def test_cookie_samesite_check_empty(context_empty):
+    """Test the cookie SameSite check where no attribute is given.
+
+    This will check if the value is set to Lax or Strict.
+    """
+    cookie_samesite_check_empty = CookieSameSiteCheck(
+        check_id="cookie_samesite_check_empty",
+        name="Test Cookie SameSite Check",
+        cookie_name="test-complex-cookie2",
+        success=True,
+        severity=SeverityWeight.MEDIUM,
+        success_message="Test success message",
+        failure_message="""Test failure message""",
+    )
+
+    assert cookie_samesite_check_empty.check(context_empty) is False
+
+
 def test_cookie_samesite_strict_check(context):
     """Test the cookie SameSite check where the cookie is marked as SameSite=Strict."""
     cookie_samesite_strict_check = CookieSameSiteCheck(

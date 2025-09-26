@@ -75,12 +75,13 @@ Reference:
 csrf_samesite_check = CookieSameSiteCheck(
     check_id="csrf_samesite_check",
     depends_on="csrf_check",
-    name="Is the CSRF cookie SameSite=Lax?",
+    name="Does the CSRF cookie have a SameSite flag?",
     cookie_name="csrftoken",
-    samesite_value="Lax",
     success=True,
     severity=SeverityWeight.HIGH,
-    success_message="CSRF cookie is marked as SameSite=Lax, which helps prevent CSRF attacks via cross-site requests.",
+    success_message="""
+CSRF cookie is marked as SameSite=Lax or SameSite=Strict, which helps prevent CSRF attacks via cross-site requests.
+    """,
     failure_message="""
 Your CSRF cookie is not marked as SameSite=Lax. This increases the risk of CSRF attacks.
 Set `CSRF_COOKIE_SAMESITE = 'Lax'` in your Django settings.
@@ -263,12 +264,11 @@ Reference:
 sessionid_samesite_check = CookieSameSiteCheck(
     check_id="sessionid_samesite_check",
     depends_on="sessionid_cookie_check",
-    name="Is the sessionid cookie SameSite=Lax?",
+    name="Does the sessionid cookie have a SameSite flag?",
     cookie_name="sessionid",
-    samesite_value="Lax",
     success=True,
     severity=SeverityWeight.HIGH,
-    success_message="Sessionid cookie is marked as SameSite=Lax. This helps prevent CSRF attacks.",
+    success_message="Sessionid cookie is marked as SameSite=Lax or SameSite=Strict. This helps prevent CSRF attacks.",
     failure_message="""
 Your sessionid cookie is not marked as SameSite=Lax. This increases the risk of CSRF attacks.
 Set `SESSION_COOKIE_SAMESITE = 'Lax'` in your Django settings.
