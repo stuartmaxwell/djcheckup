@@ -385,12 +385,12 @@ Error message:
             response = self.client.get(self.url)
             response.raise_for_status()
 
-        except (httpx.HTTPStatusError, httpx.ConnectError) as e:
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
             return CheckResponse(
                 name=check_name,
                 result=CheckResult.FAILURE,
                 severity_score=severity_weight,
-                message=f"{error_message} ```\n{e}```",
+                message=f"{error_message} ```\n\n> {e}```",
             )
 
         self.context = create_context(self.url, self.client, response)
