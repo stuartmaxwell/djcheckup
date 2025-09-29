@@ -390,7 +390,7 @@ Error message:
                 name=check_name,
                 result=CheckResult.FAILURE,
                 severity_score=severity_weight,
-                message=f"{error_message} ```\n\n> {e}```",
+                message=f"{error_message} \n\n> `{e}`",
             )
 
         self.context = create_context(self.url, self.client, response)
