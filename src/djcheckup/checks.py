@@ -390,7 +390,7 @@ Error message:
                 name=check_name,
                 result=CheckResult.FAILURE,
                 severity_score=severity_weight,
-                message=f"{error_message} ```\n\n> {e}```",
+                message=f"{error_message} \n\n> `{e}`",
             )
 
         self.context = create_context(self.url, self.client, response)
@@ -422,7 +422,15 @@ Error message:
         previous_results: dict[str, CheckResponse] = {"first_check": first_check}
 
         for check in checks:
-            result = check.run(self.context, previous_results)
+            try:
+                result = check.run(self.context, previous_results)
+            except (httpx.RequestError, httpx.HTTPStatusError) as exc:
+                result = CheckResponse(
+                    name=check.name,
+                    result=CheckResult.FAILURE,
+                    severity_score=check.severity,
+                    message=f"An error occurred while running this check: \n\n> `{exc}`",
+                )
             site_check_results.check_results.append(result)
             previous_results[check.check_id] = result
 

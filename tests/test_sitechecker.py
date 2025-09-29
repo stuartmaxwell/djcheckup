@@ -3,13 +3,17 @@
 import httpx
 import pytest
 
-from djcheckup.checks import CheckResult, SiteChecker
+from djcheckup.checks import CheckResult, PathCheck, SeverityWeight, SiteChecker
 
 url = "https://example.com"
 
 
 def mock_response(request: httpx.Request) -> httpx.Response:
     """Return a fake response for any request."""
+    # If the path matches /fail, raise a connection error
+    if request.url.path == "/fail":
+        msg = "Connection error."
+        raise httpx.ConnectError(msg)
     return httpx.Response(
         status_code=200,
         headers={"test-header-name": "test-header-value"},
@@ -61,6 +65,33 @@ def test_first_check_fails(mock_client_404):
     # Assert the check failed (header is missing)
     assert result.check_results[0].name == "Can I connect to your site?"
     assert result.check_results[0].result.value == CheckResult.FAILURE.value
+
+
+def test_second_check_fails(mock_client):
+    """Test the second check fails."""
+    checker = SiteChecker(url=url, client=mock_client)
+
+    # create a dummy check
+    dummy_check = PathCheck(
+        check_id="failing_check",
+        name="Failing Check",
+        path="/fail",
+        success=False,
+        severity=SeverityWeight.HIGH,
+        success_message="Success",
+        failure_message="Fail",
+    )
+
+    result = checker.run_checks([dummy_check])
+
+    # Assert the first check
+    assert result.check_results[0].name == "Can I connect to your site?"
+    assert result.check_results[0].result.value == CheckResult.SUCCESS.value
+
+    # Assert the second check failed
+    assert result.check_results[1].name == "Failing Check"
+    assert result.check_results[1].result.value == CheckResult.FAILURE.value
+    assert "An error occurred while running this check" in result.check_results[1].message
 
 
 def test_sitechecker_init(mock_client, monkeypatch):
