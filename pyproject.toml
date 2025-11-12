@@ -1,6 +1,6 @@
 [project]
 name = "djcheckup"
-version = "0.4.3"
+version = "0.4.4"
 description = "DJ Checkup is a security scanner for Django sites."
 readme = "README.md"
 authors = [{ name = "Stuart Maxwell", email = "stuart@amanzi.nz" }]
@@ -44,7 +44,13 @@ project-includes = ["src/djcheckup/**"]
 convention = "google" # Accepts: "google", "numpy", or "pep257".
 
 [dependency-groups]
-dev = ["nox>=2025.5.1", "pyrefly>=0.34.0", "pytest>=8.4.2", "pytest-cov>=7.0.0"]
+dev = [
+    "nox>=2025.5.1",
+    "pre-commit>=4.4.0",
+    "pyrefly>=0.34.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+]
 
 [tool.pytest.ini_options]
 pythonpath = "."

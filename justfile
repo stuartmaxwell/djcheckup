@@ -8,9 +8,6 @@ python_version := "3.13"
 # Set the uv run command
 uvr := "uv run  --group dev"
 
-#Set the uv command to run a tool
-uvt := "uv tool run"
-
 # Sync the package
 @sync:
     uv sync --group dev
@@ -23,29 +20,29 @@ uvt := "uv tool run"
 @build:
     uv build
 
-# Publish the package - this requires a $HOME/.pypirc file with your credentials
-@publish:
-      rm -rf ./dist/*
-      uv build
-      uv tool run twine check dist/*
-      uv tool run twine upload dist/*
+# Install pre-commit hooks
+@pc-install:
+    {{uvr}} pre-commit install
 
 # Upgrade pre-commit hooks
 @pc-up:
-    uv tool run pre-commit autoupdate
+    {{uvr}} pre-commit autoupdate
 
 # Run pre-commit hooks
 @pc-run:
-    uv tool run pre-commit run --all-files
+    {{uvr}} pre-commit run --all-files
 
-# Use uv to bump the patch version
+# Use uv to bump the patch version. Include `--dry-run` to see what would happen without actually bumping the version.
 @bump *ARGS:
     uv version --bump patch {{ ARGS }}
 
-
-# Use uv to bump the minor version
+# Use uv to bump the minor version. Include `--dry-run` to see what would happen without actually bumping the version.
 @bump-minor *ARGS:
     uv version --bump minor {{ ARGS }}
+
+# Use uv to bump the major version. Include `--dry-run` to see what would happen without actually bumping the version.
+@bump-major *ARGS:
+    uv version --bump major {{ ARGS }}
 
 # Create a new GitHub release - this requires Python 3.11 or newer, and the GitHub CLI must be installed and configured
 version := `echo "from tomllib import load; print(load(open('pyproject.toml', 'rb'))['project']['version'])" | uv run - `
