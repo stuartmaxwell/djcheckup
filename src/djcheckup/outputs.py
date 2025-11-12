@@ -4,7 +4,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 from enum import Enum
-from typing import TypedDict
+from typing import TypeAlias, TypedDict
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -57,7 +57,7 @@ def rich_output(check_results: SiteCheckResult) -> None:
     console.print(Panel(table))
 
 
-type JSONValue = str | int | Mapping[str, "JSONValue"] | Sequence["JSONValue"]
+JSONValue: TypeAlias = str | int | Mapping[str, "JSONValue"] | Sequence["JSONValue"]  # noqa: UP040 3.10 3.11
 
 
 def normalize_for_json(obj: JSONValue) -> JSONValue:
