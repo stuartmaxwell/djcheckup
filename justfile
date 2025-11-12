@@ -8,9 +8,6 @@ python_version := "3.13"
 # Set the uv run command
 uvr := "uv run  --group dev"
 
-#Set the uv command to run a tool
-uvt := "uv tool run"
-
 # Sync the package
 @sync:
     uv sync --group dev
@@ -23,20 +20,17 @@ uvt := "uv tool run"
 @build:
     uv build
 
-# Publish the package - this requires a $HOME/.pypirc file with your credentials
-@publish:
-      rm -rf ./dist/*
-      uv build
-      uv tool run twine check dist/*
-      uv tool run twine upload dist/*
+# Install pre-commit hooks
+@pc-install:
+    {{uvr}} pre-commit install
 
 # Upgrade pre-commit hooks
 @pc-up:
-    uv tool run pre-commit autoupdate
+    {{uvr}} pre-commit autoupdate
 
 # Run pre-commit hooks
 @pc-run:
-    uv tool run pre-commit run --all-files
+    {{uvr}} pre-commit run --all-files
 
 # Use uv to bump the patch version
 @bump *ARGS:
