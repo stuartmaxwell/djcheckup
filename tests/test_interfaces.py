@@ -4,8 +4,8 @@ import httpx
 import pytest
 from typer.testing import CliRunner
 
+from djcheckup.api import run_checks
 from djcheckup.cli import app
-from djcheckup.run import run_checks
 
 url = "https://example.com"
 
