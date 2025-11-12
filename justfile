@@ -32,14 +32,17 @@ uvr := "uv run  --group dev"
 @pc-run:
     {{uvr}} pre-commit run --all-files
 
-# Use uv to bump the patch version
+# Use uv to bump the patch version. Include `--dry-run` to see what would happen without actually bumping the version.
 @bump *ARGS:
     uv version --bump patch {{ ARGS }}
 
-
-# Use uv to bump the minor version
+# Use uv to bump the minor version. Include `--dry-run` to see what would happen without actually bumping the version.
 @bump-minor *ARGS:
     uv version --bump minor {{ ARGS }}
+
+# Use uv to bump the major version. Include `--dry-run` to see what would happen without actually bumping the version.
+@bump-major *ARGS:
+    uv version --bump major {{ ARGS }}
 
 # Create a new GitHub release - this requires Python 3.11 or newer, and the GitHub CLI must be installed and configured
 version := `echo "from tomllib import load; print(load(open('pyproject.toml', 'rb'))['project']['version'])" | uv run - `
