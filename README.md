@@ -28,8 +28,9 @@ uvx djcheckup https://yourdjangosite.com
 ## Usage
 
 Run the `djcheckup` command-line utility with the URL of your Django site.
+This will make several outbound requests from your computer to the website you are checking.
 
-You'll see a nicely formatted report in your terminal:
+After a few seconds, you'll see a nicely formatted report in your terminal:
 
 ```text
 ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
@@ -99,3 +100,5 @@ You'll see a nicely formatted report in your terminal:
 │ └──────────────────────────────────────────────────┴────────────┴──────────────────────────────────────────────────┘ │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
+
+[![Published on Django Packages](https://img.shields.io/badge/Published%20on-Django%20Packages-0c3c26)](https://djangopackages.org/packages/p/djcheckup/)
