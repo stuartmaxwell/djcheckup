@@ -20,6 +20,10 @@ uvr := "uv run  --group dev"
 @build:
     uv build
 
+# Run the command line interface
+@run *ARGS:
+    {{uvr}} djcheckup {{ ARGS }}
+
 # Install pre-commit hooks
 @pc-install:
     {{uvr}} pre-commit install
