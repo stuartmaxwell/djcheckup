@@ -66,7 +66,7 @@ def test_cli(mock_perfect_client, monkeypatch):
     """Test the CLI command with mocked HTTP client."""
 
     # Mock the SiteChecker to use our mock client
-    def mock_site_checker_init(self, url: str, **_kwargs: object) -> None:
+    def mock_site_checker_init(self, url: str, **_kwargs: dict) -> None:
         self.url = httpx.URL(url)
         self.client = mock_perfect_client
         self._client_provided = True
