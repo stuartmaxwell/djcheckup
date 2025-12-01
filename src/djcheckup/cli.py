@@ -31,8 +31,8 @@ def run_checks(
         transient=True,
     ) as progress:
         task = progress.add_task("checking")
-        checker = SiteChecker(url=url)
-        results = checker.run_checks(all_checks)
+        with SiteChecker(url=url) as checker:
+            results = checker.run_checks(all_checks)
         progress.update(task, completed=True)
 
     if output_json:

@@ -68,6 +68,7 @@ def test_cli(mock_perfect_client, monkeypatch):
     def mock_site_checker_init(self, url: str, **_kwargs: object) -> None:
         self.url = httpx.URL(url)
         self.client = mock_perfect_client
+        self._client_provided = True
 
     monkeypatch.setattr("djcheckup.checks.SiteChecker.__init__", mock_site_checker_init)
 
