@@ -4,7 +4,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 from enum import Enum
-from typing import TypeAlias, TypedDict
+from typing import Any, TypedDict
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -57,13 +57,12 @@ def rich_output(check_results: SiteCheckResult) -> None:
     console.print(Panel(table))
 
 
-JSONValue: TypeAlias = str | int | Mapping[str, "JSONValue"] | Sequence["JSONValue"]  # noqa: UP040 3.10 3.11
-
-
-def normalize_for_json(obj: JSONValue) -> JSONValue:
+def normalize_for_json(obj: Any) -> Any:  # noqa: ANN401
     """Recursively convert a dict with Enums to a json-serialisable dict.
 
     This is used to convert the SiteCheckResult object to one that can be converted directly to JSON.
+
+    Using `Any` as the type annotation is intentional to simplify the code.
     """
     # dict-like objects
     if isinstance(obj, Mapping):
