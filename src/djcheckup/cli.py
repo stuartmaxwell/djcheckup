@@ -22,6 +22,10 @@ def run_checks(
         bool,
         typer.Option(help="Prints the results in JSON format."),
     ] = False,
+    insecure: Annotated[
+        bool,
+        typer.Option(help="Ignore SSL errors."),
+    ] = False,
 ) -> None:
     """Run the DJ Checkup tool against a specific URL."""
     with Progress(
@@ -31,8 +35,8 @@ def run_checks(
         transient=True,
     ) as progress:
         task = progress.add_task("checking")
-        checker = SiteChecker(url=url)
-        results = checker.run_checks(all_checks)
+        with SiteChecker(url=url, verify=not insecure) as checker:
+            results = checker.run_checks(all_checks)
         progress.update(task, completed=True)
 
     if output_json:

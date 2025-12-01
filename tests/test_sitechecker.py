@@ -106,3 +106,34 @@ def test_sitechecker_init(mock_client, monkeypatch):
     assert checker._client_provided is False
     checker.close()
     assert checker.client.is_closed
+
+
+def test_sitechecker_passes_verify_to_client(monkeypatch):
+    """Test that SiteChecker passes the verify parameter to httpx.Client."""
+    captured_kwargs = {}
+
+    """
+    This `MockClient` pretends to be an HTTPX client, but all it does is capture the kwargs passed to it.
+    """
+
+    class MockClient:
+        def __init__(self, **kwargs: object) -> None:
+            captured_kwargs.update(kwargs)
+
+        def close(self) -> None:
+            pass
+
+    # Patch httpx.Client to capture arguments
+    monkeypatch.setattr("httpx.Client", MockClient)
+
+    # Test default (verify=True)
+    captured_kwargs.clear()
+    checker = SiteChecker(url=url)
+    assert captured_kwargs.get("verify") is True
+    checker.close()
+
+    # Test verify=False
+    captured_kwargs.clear()
+    checker = SiteChecker(url=url, verify=False)
+    assert captured_kwargs.get("verify") is False
+    checker.close()
