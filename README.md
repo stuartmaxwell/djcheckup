@@ -101,4 +101,47 @@ After a few seconds, you'll see a nicely formatted report in your terminal:
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
+## Advanced Usage
+
+If you are trying to scan a website that uses a self-signed SSL certificate, or has another SSL issue that you want to
+ignore, you can pass the `--insecure` flag to the command. This tells the HTTPX client to ignore SSL errors.
+
+If you want to return the output in JSON format, you can pass the `--output-json` flag to the command. This will output a
+JSON response in your terminal which can be copied/pasted or piped into a file or other tools.
+
+## API
+
+The `djcheckup` library can also be imported into your own code as a library so you can incorporate the results into
+your own tools.
+
+In the following basic example, `result` is a `SiteCheckResultDict` typed dictionary. See `outputs.py` for
+implementation details:
+
+```python
+from djcheckup import run_checks
+
+result = run_checks("https://example.com")
+```
+
+When using `djcheckup` programmatically, you can swap out the HTTPX client with your own client with any specific
+configuration you require. You can also change the output to return a JSON string response. See `api.py` for
+implementation details.
+
+A full example could look like the following, which uses a custom HTTPX client and returns JSON:
+
+```python
+import httpx
+from djcheckup import run_checks
+
+
+client = httpx.Client(
+    headers={"User-Agent": "My User Agent"},
+    timeout=10.0,
+    follow_redirects=True,
+    verify=True,
+)
+
+result = run_checks("https://example.com", client=client, output_format="json")
+```
+
 [![Published on Django Packages](https://img.shields.io/badge/Published%20on-Django%20Packages-0c3c26)](https://djangopackages.org/packages/p/djcheckup/)
