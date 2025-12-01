@@ -318,7 +318,7 @@ def create_context(url: httpx.URL, client: httpx.Client, response: httpx.Respons
 class SiteChecker:
     """Run all the checks for a given site."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         url: str,
         *,
@@ -326,6 +326,7 @@ class SiteChecker:
         user_agent: str = "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)",
         timeout: float = 10.0,
         follow_redirects: bool = True,
+        verify: bool = True,
     ) -> None:
         """Initialize the SiteChecker with a URL and optional HTTPX client.
 
@@ -335,6 +336,7 @@ class SiteChecker:
             user_agent: The User-Agent string to use for requests.
             timeout: The timeout for requests in seconds.
             follow_redirects: Whether to follow redirects.
+            verify: Whether to verify SSL certificates.
         """
         self.url: httpx.URL = httpx.URL(url)
         self._client_provided = client is not None
@@ -346,6 +348,7 @@ class SiteChecker:
                 headers={"User-Agent": user_agent},
                 timeout=timeout,
                 follow_redirects=follow_redirects,
+                verify=verify,
             )
 
     def close(self) -> None:

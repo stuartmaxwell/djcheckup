@@ -5,6 +5,7 @@ import pytest
 from typer.testing import CliRunner
 
 from djcheckup.api import run_checks
+from djcheckup.checks import SiteCheckResult
 from djcheckup.cli import app
 
 url = "https://example.com"
@@ -102,6 +103,46 @@ def test_cli_with_failures(mock_client, monkeypatch):
     assert "Success" in output
     assert "Skipped" in output
     assert "Failure" in output
+
+
+def test_cli_insecure_flag(monkeypatch):
+    """Test that the --insecure flag passes verify=False to the SiteChecker class."""
+    captured_kwargs = {}
+
+    """
+    This `MockSiteChecker` class is a fake `SiteChecker` class that captures the kwargs passed to it.
+    """
+
+    class MockSiteChecker:
+        def __init__(self, url: str, **kwargs: dict) -> None:  # noqa: ARG002
+            captured_kwargs.update(kwargs)
+
+        def run_checks(self, checks: list) -> SiteCheckResult:  # noqa: ARG002
+            """Just returns an empty SiteCheckResult."""
+            return SiteCheckResult(url=url, check_results=[])
+
+        def __enter__(self) -> "MockSiteChecker":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            pass
+
+    # Patch SiteChecker in the cli module
+    monkeypatch.setattr("djcheckup.cli.SiteChecker", MockSiteChecker)
+
+    runner = CliRunner()
+
+    # Test with --insecure
+    captured_kwargs.clear()
+    result = runner.invoke(app, [url, "--insecure"])
+    assert result.exit_code == 0
+    assert captured_kwargs.get("verify") is False
+
+    # Test without --insecure (default)
+    captured_kwargs.clear()
+    result = runner.invoke(app, [url])
+    assert result.exit_code == 0
+    assert captured_kwargs.get("verify") is True
 
 
 def test_cli_json_output(mock_perfect_client, monkeypatch):
