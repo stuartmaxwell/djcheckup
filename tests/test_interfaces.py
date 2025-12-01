@@ -57,7 +57,7 @@ def mock_perfect_client():
 
 @pytest.fixture
 def mock_client():
-    """Return a mock HTTPX client that returns a successful response with all cookies and headers."""
+    """Return a mock HTTPX client that returns a successful barebones response."""
     mock_transport = httpx.MockTransport(mock_response)
     return httpx.Client(transport=mock_transport, follow_redirects=True)
 
