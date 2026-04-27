@@ -1,8 +1,7 @@
-name: Publish
-
+name: Publish Python Package to PyPi
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   test:
@@ -14,29 +13,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-      - name: Run Tests with Python ${{ matrix.python-version }}
-        run: uv run --python ${{ matrix.python-version }} pytest
-
-  pypi:
-    name: Publish to PyPI
+      - name: Install PDM and Python
+        uses: pdm-project/setup-pdm@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          # This tells PDM to install dependencies into the venv
+          cache: true
+      - name: Install dependencies
+        run: pdm install
+      - name: Run Tests
+        run: pdm run pytest
+  publish:
+    name: Publish release to PyPI
     runs-on: ubuntu-latest
-    # Environment and permissions trusted publishing.
-    environment:
-      # Create this environment in the GitHub repository under Settings -> Environments
-      name: pypi
+    environment: pypi
     permissions:
-      id-token: write
       contents: read
+      id-token: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-      - name: Install Python 3.13
-        run: uv python install 3.13
-      - name: Build
-        run: uv build
-      - name: Publish
-        run: uv publish
+      - uses: actions/checkout@v5
+      - uses: pdm-project/setup-pdm@v4
+      - name: Publish package distributions to PyPI
+        run: pdm publish
