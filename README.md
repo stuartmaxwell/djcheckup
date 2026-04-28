@@ -8,17 +8,17 @@ checks against your Django site. These are the same checks that are used by the 
 
 ## Installation
 
-This works best when installed with `uv tool` or `pipx`.
+This works best when installed with `pipx` or `uv tool`.
 
 ```bash
-# With uv:
-uv tool install djcheckup
-
-# Or with pipx:
+# With pipx:
 pipx install djcheckup
+
+# Or with uv:
+uv tool install djcheckup
 ```
 
-You can also run the tool without installing it:
+With uv, you can also run the tool without installing it first:
 
 ```bash
 # With uvx:

@@ -1,11 +1,17 @@
 [project]
 name = "djcheckup"
-version = "0.6.0"
+version = "0.7.0"
 description = "DJ Checkup is a security scanner for Django sites."
 readme = "README.md"
-authors = [{ name = "Stuart Maxwell", email = "stuart@amanzi.nz" }]
+authors = [
+    { name = "Stuart Maxwell", email = "stuart@amanzi.nz" },
+]
 requires-python = ">=3.10"
-dependencies = ["httpx>=0.28.1", "rich>=14.1.0", "typer>=0.17.4"]
+dependencies = [
+    "httpx~=0.28",
+    "rich~=15.0",
+    "typer~=0.24",
+]
 license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: Python",
@@ -16,6 +22,14 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 
+[dependency-groups]
+dev = [
+    "nox~=2026.4",
+    "pre-commit~=4.5",
+    "pytest~=9.0",
+    "pytest-cov~=7.1",
+]
+
 [project.scripts]
 djcheckup = "djcheckup.cli:app"
 
@@ -24,33 +38,12 @@ Homepage = "https://github.com/stuartmaxwell/djcheckup"
 Repository = "https://github.com/stuartmaxwell/djcheckup"
 
 [build-system]
-requires = ["uv_build>=0.8.13,<0.9.0"]
-build-backend = "uv_build"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.ruff]
-line-length = 120
-target-version = "py313"
+[tool.pdm]
+distribution = true
 
-[tool.ruff.lint]
-select = ["ALL"]
-
-[tool.pyrefly]
-project-includes = ["src/djcheckup/**"]
-
-[tool.ruff.lint.extend-per-file-ignores]
-"tests/**" = ["S101", "ANN201", "ANN001", "ARG001", "PT011", "PGH003", "SLF001"]
-
-[tool.ruff.lint.pydocstyle]
-convention = "google" # Accepts: "google", "numpy", or "pep257".
-
-[dependency-groups]
-dev = [
-    "nox>=2025.5.1",
-    "pre-commit>=4.4.0",
-    "pyrefly>=0.34.0",
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0",
-]
 
 [tool.pytest.ini_options]
 pythonpath = "."
