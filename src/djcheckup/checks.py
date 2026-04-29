@@ -1,13 +1,16 @@
 """Check types."""
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from http.cookiejar import CookieJar
+from types import TracebackType
 from typing import Literal
 
-import httpx
+import httpxyz
+
+from djcheckup.protocols import ClientProtocol, ResponseProtocol, UrlProtocol
 
 
 class SeverityWeight(Enum):
@@ -30,14 +33,23 @@ class CheckResult(Enum):
 
 @dataclass
 class SiteCheckContext:
-    """Context object passed to all checks."""
+    """Context object passed to all checks.
 
-    url: httpx.URL
-    client: httpx.Client
-    headers: httpx.Headers
+    Args:
+        url (str): The URL being checked. Note: we use a string here so that the underlying HTTP client can handle it.
+        client (ClientProtocol): The HTTP client to use for requests. Must match the `ClientProtocol` protocol.
+        headers (Mapping[str, str]): The headers retrieved from the first response.
+        cookies (CookieJar): The cookies retrieved from the first response.
+        content (str): The content retrieved from the first response.
+        response_url (UrlProtocol): The URL of the response after any redirects.
+    """
+
+    url: str
+    client: ClientProtocol
+    headers: Mapping[str, str]
     cookies: CookieJar
     content: str
-    response_url: httpx.URL
+    response_url: UrlProtocol
 
 
 @dataclass
@@ -72,11 +84,28 @@ class _BaseCheck(ABC):
 
     @abstractmethod
     def check(self, context: SiteCheckContext) -> bool:
-        """Run the check and return the result."""
+        """This is the check that needs to be run.
+
+        Each check that is created, needs to implement a `check` method that returns a boolean result.
+
+        Args:
+            context: The site check context.
+
+        Returns:
+            True if the check passes, False otherwise.
+        """
         ...
 
     def run(self, context: SiteCheckContext, previous_results: dict[str, CheckResponse]) -> CheckResponse:
-        """Run the header check."""
+        """Run the check.
+
+        Args:
+            context: The site check context.
+            previous_results: A dictionary of previous check results.
+
+        Returns:
+            The check response.
+        """
         if self.depends_on:
             dependent_result = previous_results.get(self.depends_on)
 
@@ -105,7 +134,7 @@ class ContentCheck(_BaseCheck):
     """A content check.
 
     Checks for specific content in the response.
-    Takes an optional path to check a different URL.
+    Takes an optional path to check a specific path appended to the URL.
     """
 
     content: str
@@ -117,7 +146,8 @@ class ContentCheck(_BaseCheck):
 
         if self.path:
             # Append the path to the url
-            new_url = httpx.URL(context.url).join(self.path)
+            # We use httpxyz.URL to manipulate the URL, and then convert back to the str value.
+            new_url = str(httpxyz.URL(context.url).join(self.path))
 
             response = context.client.get(new_url)
             response_content = response.text
@@ -221,7 +251,11 @@ class CookieSecureCheck(_BaseCheck):
 
 @dataclass
 class HeaderCheck(_BaseCheck):
-    """A header check."""
+    """A header check.
+
+    Checks if a specific header name is present.
+    If the header value is provided, also checks if it matches the actual value.
+    """
 
     header_name: str
     header_value: str = ""
@@ -256,14 +290,15 @@ class PathCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Makes a request to the specified path and checks the response."""
         # Append the path to the url using the urlib module
-        new_url = httpx.URL(context.url).join(self.path)
+        new_url: str = str(httpxyz.URL(context.url).join(self.path))
 
         response = context.client.get(new_url)
 
         if self.status_code:
             return response.status_code == self.status_code
 
-        return bool(httpx.codes.is_success(response.status_code))
+        # Use the `codes` shortcut in HTTPXYZ to check the status code
+        return bool(httpxyz.codes.is_success(response.status_code))
 
 
 @dataclass
@@ -282,11 +317,13 @@ class SchemeCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if the scheme of the URL in the request matches the final scheme."""
         # If the start scheme matches the original URL scheme, then we don't need a new request.
-        if context.url.scheme == self.start_scheme:
+        # Even if an alternative client has been provided, we use the `URL` methods from HTTPXYZ.
+        url = httpxyz.URL(context.url)
+        if url.scheme == self.start_scheme:
             return context.response_url.scheme == self.end_scheme
 
         # Need to create a new URL with the specified start scheme
-        new_url = context.url.copy_with(scheme=self.start_scheme)
+        new_url = str(httpxyz.URL(context.url).copy_with(scheme=self.start_scheme))
 
         # And make a request to the new URL
         response = context.client.get(new_url)
@@ -294,16 +331,25 @@ class SchemeCheck(_BaseCheck):
         return response.url.scheme == self.end_scheme
 
 
-def create_context(url: httpx.URL, client: httpx.Client, response: httpx.Response) -> SiteCheckContext:
+def create_context(url: str, client: ClientProtocol, response: ResponseProtocol) -> SiteCheckContext:
     """Create a SiteCheckContext context object.
 
+    This function is called by the `first_check` method and is used to gather the response from the first check which
+    is used by the subsequent checks.
+
     Args:
-        url: The URL to check.
-        client: The HTTPX client to use for requests.
-        response: The HTTPX response object from the initial request.
+        url: The URL being checked.
+        client: The HTTP client to use for any new requests.
+        response: The HTTP response object from the initial request.
 
     Returns:
-        A SiteCheckContext object containing the provided parameters.
+        A SiteCheckContext object containing the following fields:
+        - url: The URL being checked.
+        - client: The HTTP client to use for any new requests.
+        - headers: The HTTP headers from the initial response.
+        - cookies: The HTTP cookies from the initial response.
+        - content: The response content as a string.
+        - response_url: The URL of the final response (after any redirects).
     """
     return SiteCheckContext(
         url=url,
@@ -318,34 +364,35 @@ def create_context(url: httpx.URL, client: httpx.Client, response: httpx.Respons
 class SiteChecker:
     """Run all the checks for a given site."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         url: str,
         *,
-        client: httpx.Client | None = None,
-        user_agent: str = "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)",
+        client: ClientProtocol | None = None,
         timeout: float = 10.0,
         follow_redirects: bool = True,
         verify: bool = True,
     ) -> None:
-        """Initialize the SiteChecker with a URL and optional HTTPX client.
+        """Initialize the SiteChecker with a URL and optional HTTP client.
+
+        The HTTP client is defined in the ClientProtocol protocol and by default this will use HTTPXYZ, unless an
+        alternative is provided. The alternative could be a custom HTTPXYZ client, or an HTTPX client will also work.
 
         Args:
-            url: The URL to check.
-            client: An optional HTTPX client to use for requests.
-            user_agent: The User-Agent string to use for requests.
-            timeout: The timeout for requests in seconds.
-            follow_redirects: Whether to follow redirects.
-            verify: Whether to verify SSL certificates.
+            url (str): The URL to check.
+            client (ClientProtocol): An optional HTTP client to use for requests.
+            timeout (float): The timeout for requests in seconds.
+            follow_redirects (bool): Whether to follow redirects.
+            verify (bool): Whether to verify SSL certificates.
         """
-        self.url: httpx.URL = httpx.URL(url)
+        self.url = url
         self._client_provided = client is not None
 
         if client is not None:
             self.client = client
         else:
-            self.client = httpx.Client(
-                headers={"User-Agent": user_agent},
+            self.client = httpxyz.Client(
+                headers={"User-Agent": "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)"},
                 timeout=timeout,
                 follow_redirects=follow_redirects,
                 verify=verify,
@@ -364,46 +411,57 @@ class SiteChecker:
         """Context manager entry."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # noqa: ANN001
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Context manager exit."""
         self.close()
 
     def run_first_check(self) -> CheckResponse:
         """Run the first check.
 
-        This connects to the URL using httpx to check connectivity and then saves the page content, headers, and cookies
-        into a context object for the remaining checks.
+        The first check is responsible for checking connectivity to the URL provided, and setting up the initial
+        `SiteCheckContext` context object, which is then used by all subsequent checks.
+
+        The following steps are performed:
+
+        - Create a `CheckResponse` class to return the result of the check. We set the result to failure.
+        - Try a GET request to the URL provided.
+        - If this fails, then modify the CheckResponse message, and return the failed result.
+        - If this succeeds, we create a `SiteCheckContext` object with the response.
+        - The `SiteCheckContext` object is added to the `context` attribute of the `SiteChecker` object.
+        - Then we modify the `CheckResponse` to indicate the success with a successful message and return it.
+
+        Returns:
+            The `CheckResponse` object indicating the result of the check.
         """
-        check_name = "Can I connect to your site?"
-        severity_weight = SeverityWeight.HIGH
-        success_message = "Connected to your site successfully."
-        error_message = """
-Unable to connect to your site and no further checks can be performed.
-
-Error message:
-
-"""
+        check_response = CheckResponse(
+            name="Can I connect to your site?",
+            severity_score=SeverityWeight.HIGH,
+            result=CheckResult.FAILURE,
+            message="",
+        )
 
         try:
             response = self.client.get(self.url)
             response.raise_for_status()
 
-        except (httpx.RequestError, httpx.HTTPStatusError) as e:
-            return CheckResponse(
-                name=check_name,
-                result=CheckResult.FAILURE,
-                severity_score=severity_weight,
-                message=f"{error_message} \n\n> `{e}`",
+        except Exception as e:
+            error_name = type(e).__name__
+            check_response.message = (
+                f"Unable to connect to your site and no further checks can be performed. \n\n> **{error_name}**: `{e}`"
             )
+            return check_response
 
         self.context = create_context(self.url, self.client, response)
 
-        return CheckResponse(
-            name=check_name,
-            result=CheckResult.SUCCESS,
-            severity_score=severity_weight,
-            message=success_message,
-        )
+        check_response.result = CheckResult.SUCCESS
+        check_response.message = "Connected to your site successfully."
+
+        return check_response
 
     def run_checks(self, checks: Sequence[_BaseCheck]) -> SiteCheckResult:
         """Run all checks.
@@ -427,13 +485,16 @@ Error message:
         for check in checks:
             try:
                 result = check.run(self.context, previous_results)
-            except (httpx.RequestError, httpx.HTTPStatusError) as exc:
+
+            except Exception as e:
+                error_name = type(e).__name__
                 result = CheckResponse(
                     name=check.name,
                     result=CheckResult.FAILURE,
                     severity_score=check.severity,
-                    message=f"An error occurred while running this check: \n\n> `{exc}`",
+                    message=f"An error occurred while running this check: \n\n> **{error_name}**: `{e}`",
                 )
+
             site_check_results.check_results.append(result)
             previous_results[check.check_id] = result
 

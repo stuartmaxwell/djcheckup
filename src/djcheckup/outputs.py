@@ -57,7 +57,7 @@ def rich_output(check_results: SiteCheckResult) -> None:
     console.print(Panel(table))
 
 
-def normalize_for_json(obj: Any) -> Any:  # noqa: ANN401
+def normalize_for_json(obj: Any) -> Any:
     """Recursively convert a dict with Enums to a json-serialisable dict.
 
     This is used to convert the SiteCheckResult object to one that can be converted directly to JSON.
@@ -86,7 +86,7 @@ def normalize_for_json(obj: Any) -> Any:  # noqa: ANN401
 
 def sitecheck_as_dict(site_result: SiteCheckResult) -> SiteCheckResultDict:
     """Convert SiteCheckResult into JSON-serialisable dict."""
-    return normalize_for_json(asdict(site_result))  # type: ignore  # noqa: PGH003
+    return normalize_for_json(asdict(site_result))
 
 
 def sitecheck_as_json(site_result: SiteCheckResult) -> str:

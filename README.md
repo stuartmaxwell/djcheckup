@@ -104,7 +104,7 @@ After a few seconds, you'll see a nicely formatted report in your terminal:
 ## Advanced Usage
 
 If you are trying to scan a website that uses a self-signed SSL certificate, or has another SSL issue that you want to
-ignore, you can pass the `--insecure` flag to the command. This tells the HTTPX client to ignore SSL errors.
+ignore, you can pass the `--insecure` flag to the command. This tells the HTTP client to ignore SSL errors.
 
 If you want to return the output in JSON format, you can pass the `--output-json` flag to the command. This will output a
 JSON response in your terminal which can be copied/pasted or piped into a file or other tools.
@@ -123,9 +123,12 @@ from djcheckup import run_checks
 result = run_checks("https://example.com")
 ```
 
-When using `djcheckup` programmatically, you can swap out the HTTPX client with your own client with any specific
-configuration you require. You can also change the output to return a JSON string response. See `api.py` for
-implementation details.
+When using `djcheckup` programmatically, you can swap out the HTTP client with your own client with any specific
+configuration you require. By default, DJ Checkup uses the [HTTPXYZ](https://httpxyz.org/) library which is a fork of
+[HTTPX](https://www.python-httpx.org/). You can create your own client (either HTTPX or HTTPXYZ) with your own
+customisations and pass it to the `run_checks` method.
+
+You can also change the output to return a JSON string response. See `api.py` for implementation details.
 
 A full example could look like the following, which uses a custom HTTPX client and returns JSON:
 
@@ -142,6 +145,8 @@ client = httpx.Client(
 )
 
 result = run_checks("https://example.com", client=client, output_format="json")
+
+print(result)
 ```
 
 [![Published on Django Packages](https://img.shields.io/badge/Published%20on-Django%20Packages-0c3c26)](https://djangopackages.org/packages/p/djcheckup/)

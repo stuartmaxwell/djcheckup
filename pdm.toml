@@ -1,0 +1,8 @@
+[strategy]
+save = "compatible"
+
+[venv]
+in_project = true
+
+[python]
+use_venv = true

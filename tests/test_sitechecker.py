@@ -1,6 +1,6 @@
 """Test the SiteChecker class and related functionality."""
 
-import httpx
+import httpxyz
 import pytest
 
 from djcheckup.checks import CheckResult, PathCheck, SeverityWeight, SiteChecker
@@ -8,22 +8,22 @@ from djcheckup.checks import CheckResult, PathCheck, SeverityWeight, SiteChecker
 url = "https://example.com"
 
 
-def mock_response(request: httpx.Request) -> httpx.Response:
+def mock_response(request: httpxyz.Request) -> httpxyz.Response:
     """Return a fake response for any request."""
     # If the path matches /fail, raise a connection error
     if request.url.path == "/fail":
         msg = "Connection error."
-        raise httpx.ConnectError(msg)
-    return httpx.Response(
+        raise httpxyz.ConnectError(msg)
+    return httpxyz.Response(
         status_code=200,
         headers={"test-header-name": "test-header-value"},
         content="Test response content.",
     )
 
 
-def mock_response_404(request: httpx.Request) -> httpx.Response:
+def mock_response_404(request: httpxyz.Request) -> httpxyz.Response:
     """Return a fake response for any request."""
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=404,
         content="Page not found.",
     )
@@ -32,15 +32,15 @@ def mock_response_404(request: httpx.Request) -> httpx.Response:
 @pytest.fixture
 def mock_client_404():
     """Return a mock HTTP client."""
-    mock_transport = httpx.MockTransport(mock_response_404)
-    return httpx.Client(transport=mock_transport)
+    mock_transport = httpxyz.MockTransport(mock_response_404)
+    return httpxyz.Client(transport=mock_transport)
 
 
 @pytest.fixture
 def mock_client():
     """Return a mock HTTP client."""
-    mock_transport = httpx.MockTransport(mock_response)
-    return httpx.Client(transport=mock_transport)
+    mock_transport = httpxyz.MockTransport(mock_response)
+    return httpxyz.Client(transport=mock_transport)
 
 
 def test_first_check(mock_client):
@@ -95,12 +95,12 @@ def test_second_check_fails(mock_client):
 
 
 def test_sitechecker_init(mock_client, monkeypatch):
-    """Test the SiteChecker class when not getting a custom HTTPX client passed to it."""
+    """Test the SiteChecker class when not getting a custom HTTPXYZ client passed to it."""
 
-    def mock_httpx_client(*_args: object, **_kwargs: object) -> httpx.Client:
+    def mock_httpxyz_client(*_args: object, **_kwargs: object) -> httpxyz.Client:
         return mock_client
 
-    monkeypatch.setattr("httpx.Client", mock_httpx_client)
+    monkeypatch.setattr("httpxyz.Client", mock_httpxyz_client)
 
     checker = SiteChecker(url=url)
     assert checker._client_provided is False
@@ -109,11 +109,11 @@ def test_sitechecker_init(mock_client, monkeypatch):
 
 
 def test_sitechecker_passes_verify_to_client(monkeypatch):
-    """Test that SiteChecker passes the verify parameter to httpx.Client."""
+    """Test that SiteChecker passes the verify parameter to HTTPXYZ.Client."""
     captured_kwargs = {}
 
     """
-    This `MockClient` pretends to be an HTTPX client, but all it does is capture the kwargs passed to it.
+    This `MockClient` pretends to be an HTTPXYZ client, but all it does is capture the kwargs passed to it.
     """
 
     class MockClient:
@@ -123,8 +123,8 @@ def test_sitechecker_passes_verify_to_client(monkeypatch):
         def close(self) -> None:
             pass
 
-    # Patch httpx.Client to capture arguments
-    monkeypatch.setattr("httpx.Client", MockClient)
+    # Patch httpxyz.Client to capture arguments
+    monkeypatch.setattr("httpxyz.Client", MockClient)
 
     # Test default (verify=True)
     captured_kwargs.clear()

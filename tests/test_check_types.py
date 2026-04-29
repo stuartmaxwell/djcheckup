@@ -1,6 +1,6 @@
 """Test the different types of checks."""
 
-import httpx
+import httpxyz
 import pytest
 
 from djcheckup.checks import (
@@ -20,45 +20,45 @@ from djcheckup.checks import (
 url = "https://example.com"
 
 
-def mock_response(request: httpx.Request) -> httpx.Response:
+def mock_response(request: httpxyz.Request) -> httpxyz.Response:
     """Return a fake response for any request."""
     headers = [
         ("test-header-name", "test-header-value"),
         ("Set-Cookie", "test-simple-cookie1=test-val1; Path=/"),
         ("Set-Cookie", "test-complex-cookie2=test-val2; Path=/; HttpOnly; Secure; SameSite=Strict"),
     ]
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=200,
         headers=headers,
         content="Test response content.",
     )
 
 
-def mock_response_404(request: httpx.Request) -> httpx.Response:
+def mock_response_404(request: httpxyz.Request) -> httpxyz.Response:
     """Return a fake response for any request."""
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=404,
         content="Page not found.",
     )
 
 
-def mock_response_redirect_to_https(request: httpx.Request) -> httpx.Response:
+def mock_response_redirect_to_https(request: httpxyz.Request) -> httpxyz.Response:
     """Return a fake response for any request."""
     if request.url.scheme == "http":
-        return httpx.Response(
+        return httpxyz.Response(
             status_code=301,
             headers={"Location": str(request.url.copy_with(scheme="https"))},
             request=request,
         )
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=200,
         content="Test response content.",
     )
 
 
-def mock_empty_response(request: httpx.Request) -> httpx.Response:
+def mock_empty_response(request: httpxyz.Request) -> httpxyz.Response:
     """Return a fake response with no content."""
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=200,
         content="",
     )
@@ -67,57 +67,57 @@ def mock_empty_response(request: httpx.Request) -> httpx.Response:
 @pytest.fixture
 def mock_client():
     """Return a mock HTTP client."""
-    mock_transport = httpx.MockTransport(mock_response)
-    return httpx.Client(transport=mock_transport)
+    mock_transport = httpxyz.MockTransport(mock_response)
+    return httpxyz.Client(transport=mock_transport)
 
 
 @pytest.fixture
 def mock_client_404():
     """Return a mock HTTP client."""
-    mock_transport = httpx.MockTransport(mock_response_404)
-    return httpx.Client(transport=mock_transport)
+    mock_transport = httpxyz.MockTransport(mock_response_404)
+    return httpxyz.Client(transport=mock_transport)
 
 
 @pytest.fixture
 def mock_client_redirect():
     """Return a mock HTTP client."""
-    mock_transport = httpx.MockTransport(mock_response_redirect_to_https)
-    return httpx.Client(transport=mock_transport, follow_redirects=True)
+    mock_transport = httpxyz.MockTransport(mock_response_redirect_to_https)
+    return httpxyz.Client(transport=mock_transport, follow_redirects=True)
 
 
 @pytest.fixture
 def mock_client_empty():
     """Return a mock HTTP client."""
-    mock_transport = httpx.MockTransport(mock_empty_response)
-    return httpx.Client(transport=mock_transport)
+    mock_transport = httpxyz.MockTransport(mock_empty_response)
+    return httpxyz.Client(transport=mock_transport)
 
 
 @pytest.fixture
 def context(mock_client):
     """Create a SiteCheckContext context object."""
     response = mock_client.get(url)
-    return create_context(url=httpx.URL(url), client=mock_client, response=response)
+    return create_context(url=httpxyz.URL(url), client=mock_client, response=response)
 
 
 @pytest.fixture
 def context_404(mock_client_404):
     """Create a SiteCheckContext context object."""
     response = mock_client_404.get(url)
-    return create_context(url=httpx.URL(url), client=mock_client_404, response=response)
+    return create_context(url=httpxyz.URL(url), client=mock_client_404, response=response)
 
 
 @pytest.fixture
 def context_redirect(mock_client_redirect):
     """Create a SiteCheckContext context object."""
     response = mock_client_redirect.get(url)
-    return create_context(url=httpx.URL(url), client=mock_client_redirect, response=response)
+    return create_context(url=httpxyz.URL(url), client=mock_client_redirect, response=response)
 
 
 @pytest.fixture
 def context_empty(mock_client_empty):
     """Create a SiteCheckContext context object."""
     response = mock_client_empty.get(url)
-    return create_context(url=httpx.URL(url), client=mock_client_empty, response=response)
+    return create_context(url=httpxyz.URL(url), client=mock_client_empty, response=response)
 
 
 def test_content_check(context):
