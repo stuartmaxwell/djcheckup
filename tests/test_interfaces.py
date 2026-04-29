@@ -1,6 +1,6 @@
 """Tests for the CLI interface."""
 
-import httpx
+import httpxyz
 import pytest
 from typer.testing import CliRunner
 
@@ -11,16 +11,16 @@ from djcheckup.cli import app
 url = "https://example.com"
 
 
-def mock_perfect_site(request: httpx.Request) -> httpx.Response:
+def mock_perfect_site(request: httpxyz.Request) -> httpxyz.Response:
     """Return a mock response that mimics a perfect Django site."""
     if request.url.path in ["/admin", "/a/b/c/d/e/f/g/h/i/j/xyz/", "/accounts/login"]:
-        return httpx.Response(
+        return httpxyz.Response(
             status_code=404,
             content="Page not found.",
         )
 
     if request.url.scheme == "http":
-        return httpx.Response(
+        return httpxyz.Response(
             status_code=301,
             headers={"Location": str(request.url.copy_with(scheme="https"))},
             request=request,
@@ -33,16 +33,16 @@ def mock_perfect_site(request: httpx.Request) -> httpx.Response:
         ("Set-Cookie", "sessionid=xxx; Path=/; HttpOnly; Secure; SameSite=Lax"),
     ]
 
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=200,
         headers=headers,
         content="Test response content.",
     )
 
 
-def mock_response(request: httpx.Request) -> httpx.Response:
+def mock_response(request: httpxyz.Request) -> httpxyz.Response:
     """Return a barebones mock response."""
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=200,
         content="Test response content.",
     )
@@ -50,16 +50,16 @@ def mock_response(request: httpx.Request) -> httpx.Response:
 
 @pytest.fixture
 def mock_perfect_client():
-    """Return a mock HTTPX client that returns a successful response with all cookies and headers."""
-    mock_transport = httpx.MockTransport(mock_perfect_site)
-    return httpx.Client(transport=mock_transport, follow_redirects=True)
+    """Return a mock HTTPXYZ client that returns a successful response with all cookies and headers."""
+    mock_transport = httpxyz.MockTransport(mock_perfect_site)
+    return httpxyz.Client(transport=mock_transport, follow_redirects=True)
 
 
 @pytest.fixture
 def mock_client():
-    """Return a mock HTTPX client that returns a successful barebones response."""
-    mock_transport = httpx.MockTransport(mock_response)
-    return httpx.Client(transport=mock_transport, follow_redirects=True)
+    """Return a mock HTTPXYZ client that returns a successful barebones response."""
+    mock_transport = httpxyz.MockTransport(mock_response)
+    return httpxyz.Client(transport=mock_transport, follow_redirects=True)
 
 
 def test_cli(mock_perfect_client, monkeypatch):
@@ -67,7 +67,7 @@ def test_cli(mock_perfect_client, monkeypatch):
 
     # Mock the SiteChecker to use our mock client
     def mock_site_checker_init(self, url: str, **_kwargs: dict) -> None:
-        self.url = httpx.URL(url)
+        self.url = httpxyz.URL(url)
         self.client = mock_perfect_client
         self._client_provided = True
 
@@ -87,7 +87,7 @@ def test_cli_with_failures(mock_client, monkeypatch):
 
     # Mock the SiteChecker to use our mock client
     def mock_site_checker_init(self, url: str, **_kwargs: object) -> None:
-        self.url = httpx.URL(url)
+        self.url = httpxyz.URL(url)
         self.client = mock_client
         self._client_provided = True
 
@@ -114,10 +114,10 @@ def test_cli_insecure_flag(monkeypatch):
     """
 
     class MockSiteChecker:
-        def __init__(self, url: str, **kwargs: dict) -> None:  # noqa: ARG002
+        def __init__(self, url: str, **kwargs: dict) -> None:
             captured_kwargs.update(kwargs)
 
-        def run_checks(self, checks: list) -> SiteCheckResult:  # noqa: ARG002
+        def run_checks(self, checks: list) -> SiteCheckResult:
             """Just returns an empty SiteCheckResult."""
             return SiteCheckResult(url=url, check_results=[])
 
@@ -150,7 +150,7 @@ def test_cli_json_output(mock_perfect_client, monkeypatch):
 
     # Mock the SiteChecker to use our mock client
     def mock_site_checker_init(self, url: str, **_kwargs: object) -> None:
-        self.url = httpx.URL(url)
+        self.url = httpxyz.URL(url)
         self.client = mock_perfect_client
         self._client_provided = True
 

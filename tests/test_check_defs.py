@@ -1,6 +1,6 @@
 """Tests the check definitions."""
 
-import httpx
+import httpxyz
 import pytest
 
 from djcheckup.check_defs import all_checks
@@ -9,16 +9,16 @@ from djcheckup.checks import CheckResult, SiteChecker
 url = "https://example.com"
 
 
-def mock_perfect_site(request: httpx.Request) -> httpx.Response:
+def mock_perfect_site(request: httpxyz.Request) -> httpxyz.Response:
     """Return a mock response that mimics a perfect Django site."""
     if request.url.path in ["/admin", "/a/b/c/d/e/f/g/h/i/j/xyz/", "/accounts/login"]:
-        return httpx.Response(
+        return httpxyz.Response(
             status_code=404,
             content="Page not found.",
         )
 
     if request.url.scheme == "http":
-        return httpx.Response(
+        return httpxyz.Response(
             status_code=301,
             headers={"Location": str(request.url.copy_with(scheme="https"))},
             request=request,
@@ -31,7 +31,7 @@ def mock_perfect_site(request: httpx.Request) -> httpx.Response:
         ("Set-Cookie", "sessionid=xxx; Path=/; HttpOnly; Secure; SameSite=Lax"),
     ]
 
-    return httpx.Response(
+    return httpxyz.Response(
         status_code=200,
         headers=headers,
         content="Test response content.",
@@ -40,9 +40,9 @@ def mock_perfect_site(request: httpx.Request) -> httpx.Response:
 
 @pytest.fixture
 def mock_client():
-    """Return a mock HTTPX client that returns a successful response with all cookies and headers."""
-    mock_transport = httpx.MockTransport(mock_perfect_site)
-    return httpx.Client(transport=mock_transport, follow_redirects=True)
+    """Return a mock HTTPXYZ client that returns a successful response with all cookies and headers."""
+    mock_transport = httpxyz.MockTransport(mock_perfect_site)
+    return httpxyz.Client(transport=mock_transport, follow_redirects=True)
 
 
 def test_all_checks(mock_client):
