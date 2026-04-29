@@ -5,4 +5,4 @@ from djcheckup.outputs import SiteCheckResultDict
 
 __all__ = ["SiteCheckResultDict", "run_checks"]
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
