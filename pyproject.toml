@@ -24,7 +24,7 @@ classifiers = [
 
 [dependency-groups]
 dev = [
-    "nox~=2026.4",
+    "nox[pbs]~=2026.4",
     "pre-commit~=4.5",
     "pytest~=9.0",
     "pytest-cov~=7.1",
