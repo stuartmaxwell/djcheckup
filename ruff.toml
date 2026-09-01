@@ -8,7 +8,7 @@ typing-extensions = false
 [lint.extend-per-file-ignores]
 "tests/**" = ["S101", "ANN201", "ANN001", "ARG001", "PT011", "PGH003", "SLF001", "ARG002"]
 "protocols.py" = ["D101", "D102", "D105", "ANN401"]
-"checks.py" = ["BLE001"]
+"checks.py" = ["BLE001", "ANN401"]
 "outputs.py" = ["ANN401"]
 
 [lint.pydocstyle]
