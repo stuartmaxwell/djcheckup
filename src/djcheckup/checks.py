@@ -6,11 +6,33 @@ from dataclasses import dataclass
 from enum import Enum
 from http.cookiejar import CookieJar
 from types import TracebackType
-from typing import Literal
+from typing import Any, Literal
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
-import httpxyz
+import requests
 
-from djcheckup.protocols import ClientProtocol, ResponseProtocol, UrlProtocol
+from djcheckup.protocols import ClientProtocol, ResponseProtocol
+
+HTTP_SUCCESS_MIN = 200
+HTTP_SUCCESS_MAX = 300
+
+
+class RequestsClient(requests.Session):
+    """A Requests session with DJ Checkup's request defaults."""
+
+    def __init__(self, *, timeout: float, follow_redirects: bool, verify: bool) -> None:
+        """Initialize the session with defaults applied to every GET request."""
+        super().__init__()
+        self.timeout = timeout
+        self.follow_redirects = follow_redirects
+        self.verify = verify
+        self.headers.update({"User-Agent": "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)"})
+
+    def get(self, url: str | bytes, **kwargs: Any) -> requests.Response:
+        """Send a GET request using the configured timeout and redirect policy."""
+        kwargs.setdefault("timeout", self.timeout)
+        kwargs.setdefault("allow_redirects", self.follow_redirects)
+        return super().get(url, **kwargs)
 
 
 class SeverityWeight(Enum):
@@ -41,7 +63,7 @@ class SiteCheckContext:
         headers (Mapping[str, str]): The headers retrieved from the first response.
         cookies (CookieJar): The cookies retrieved from the first response.
         content (str): The content retrieved from the first response.
-        response_url (UrlProtocol): The URL of the response after any redirects.
+        response_url (str): The URL of the response after any redirects.
     """
 
     url: str
@@ -49,7 +71,7 @@ class SiteCheckContext:
     headers: Mapping[str, str]
     cookies: CookieJar
     content: str
-    response_url: UrlProtocol
+    response_url: str
 
 
 @dataclass
@@ -146,8 +168,7 @@ class ContentCheck(_BaseCheck):
 
         if self.path:
             # Append the path to the url
-            # We use httpxyz.URL to manipulate the URL, and then convert back to the str value.
-            new_url = str(httpxyz.URL(context.url).join(self.path))
+            new_url = urljoin(context.url, self.path)
 
             response = context.client.get(new_url)
             response_content = response.text
@@ -289,16 +310,14 @@ class PathCheck(_BaseCheck):
 
     def check(self, context: SiteCheckContext) -> bool:
         """Makes a request to the specified path and checks the response."""
-        # Append the path to the url using the urlib module
-        new_url: str = str(httpxyz.URL(context.url).join(self.path))
+        new_url = urljoin(context.url, self.path)
 
         response = context.client.get(new_url)
 
         if self.status_code:
             return response.status_code == self.status_code
 
-        # Use the `codes` shortcut in HTTPXYZ to check the status code
-        return bool(httpxyz.codes.is_success(response.status_code))
+        return HTTP_SUCCESS_MIN <= response.status_code < HTTP_SUCCESS_MAX
 
 
 @dataclass
@@ -317,18 +336,17 @@ class SchemeCheck(_BaseCheck):
     def check(self, context: SiteCheckContext) -> bool:
         """Check if the scheme of the URL in the request matches the final scheme."""
         # If the start scheme matches the original URL scheme, then we don't need a new request.
-        # Even if an alternative client has been provided, we use the `URL` methods from HTTPXYZ.
-        url = httpxyz.URL(context.url)
-        if url.scheme == self.start_scheme:
-            return context.response_url.scheme == self.end_scheme
+        if urlsplit(context.url).scheme == self.start_scheme:
+            return urlsplit(context.response_url).scheme == self.end_scheme
 
         # Need to create a new URL with the specified start scheme
-        new_url = str(httpxyz.URL(context.url).copy_with(scheme=self.start_scheme))
+        url_parts = urlsplit(context.url)
+        new_url = urlunsplit(url_parts._replace(scheme=self.start_scheme))
 
         # And make a request to the new URL
         response = context.client.get(new_url)
 
-        return response.url.scheme == self.end_scheme
+        return urlsplit(str(response.url)).scheme == self.end_scheme
 
 
 def create_context(url: str, client: ClientProtocol, response: ResponseProtocol) -> SiteCheckContext:
@@ -355,9 +373,9 @@ def create_context(url: str, client: ClientProtocol, response: ResponseProtocol)
         url=url,
         client=client,
         headers=response.headers,
-        cookies=response.cookies.jar,
+        cookies=response.cookies,
         content=response.text,
-        response_url=response.url,
+        response_url=str(response.url),
     )
 
 
@@ -375,8 +393,8 @@ class SiteChecker:
     ) -> None:
         """Initialize the SiteChecker with a URL and optional HTTP client.
 
-        The HTTP client is defined in the ClientProtocol protocol and by default this will use HTTPXYZ, unless an
-        alternative is provided. The alternative could be a custom HTTPXYZ client, or an HTTPX client will also work.
+        The HTTP client is defined in the ClientProtocol protocol and defaults to a configured Requests session.
+        A custom Requests session can be provided when different configuration is required.
 
         Args:
             url (str): The URL to check.
@@ -391,8 +409,7 @@ class SiteChecker:
         if client is not None:
             self.client = client
         else:
-            self.client = httpxyz.Client(
-                headers={"User-Agent": "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)"},
+            self.client = RequestsClient(
                 timeout=timeout,
                 follow_redirects=follow_redirects,
                 verify=verify,

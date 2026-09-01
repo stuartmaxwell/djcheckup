@@ -35,19 +35,16 @@ def run_checks(
     If you prefer to get a JSON response, you can set the `output_format` to `"json"`, and the results will be returned
     as a JSON string.
 
-    By default, this uses the HTTPXYZ library with the following options:
+    By default, this uses a Requests session configured with the following options:
 
     ```python
-    httpxyz.Client(
-        headers={"User-Agent": "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)"},
-        timeout=10.0,
-        follow_redirects=True,
-        verify=True,
-    )
+    session = requests.Session()
+    session.headers.update({"User-Agent": "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)"})
+    session.verify = True
     ```
 
-    You can optionally create your own customized client with either the HTTPXYZ library, or the original HTTPX library,
-    and pass this to the `client` parameter.
+    Requests made by the default session use a 10-second timeout and follow redirects. You can optionally create your
+    own customized Requests session and pass it to the `client` parameter.
 
     Args:
         url (str): The URL to check.

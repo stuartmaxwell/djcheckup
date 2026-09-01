@@ -1,27 +1,32 @@
 """Tests the check definitions."""
 
-import httpxyz
+from urllib.parse import urlsplit, urlunsplit
+
 import pytest
+from requests.models import PreparedRequest, Response
 
 from djcheckup.check_defs import all_checks
 from djcheckup.checks import CheckResult, SiteChecker
+from tests.http import create_mock_client, create_response
 
 url = "https://example.com"
 
 
-def mock_perfect_site(request: httpxyz.Request) -> httpxyz.Response:
+def mock_perfect_site(request: PreparedRequest) -> Response:
     """Return a mock response that mimics a perfect Django site."""
-    if request.url.path in ["/admin", "/a/b/c/d/e/f/g/h/i/j/xyz/", "/accounts/login"]:
-        return httpxyz.Response(
+    request_url = urlsplit(request.url)
+    if request_url.path in ["/admin", "/a/b/c/d/e/f/g/h/i/j/xyz/", "/accounts/login"]:
+        return create_response(
+            request,
             status_code=404,
             content="Page not found.",
         )
 
-    if request.url.scheme == "http":
-        return httpxyz.Response(
+    if request_url.scheme == "http":
+        return create_response(
+            request,
             status_code=301,
-            headers={"Location": str(request.url.copy_with(scheme="https"))},
-            request=request,
+            headers={"Location": urlunsplit(request_url._replace(scheme="https"))},
         )
 
     headers = [
@@ -31,7 +36,8 @@ def mock_perfect_site(request: httpxyz.Request) -> httpxyz.Response:
         ("Set-Cookie", "sessionid=xxx; Path=/; HttpOnly; Secure; SameSite=Lax"),
     ]
 
-    return httpxyz.Response(
+    return create_response(
+        request,
         status_code=200,
         headers=headers,
         content="Test response content.",
@@ -40,9 +46,8 @@ def mock_perfect_site(request: httpxyz.Request) -> httpxyz.Response:
 
 @pytest.fixture
 def mock_client():
-    """Return a mock HTTPXYZ client that returns a successful response with all cookies and headers."""
-    mock_transport = httpxyz.MockTransport(mock_perfect_site)
-    return httpxyz.Client(transport=mock_transport, follow_redirects=True)
+    """Return a mock Requests client that returns a successful response with all cookies and headers."""
+    return create_mock_client(mock_perfect_site)
 
 
 def test_all_checks(mock_client):
