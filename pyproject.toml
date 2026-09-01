@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = [
     "rich~=15.0",
     "typer~=0.24",
-    "httpxyz~=0.30",
+    "requests~=2.33",
 ]
 license = { file = "LICENSE" }
 classifiers = [
@@ -29,6 +29,7 @@ dev = [
     "pytest~=9.0",
     "pytest-cov~=7.1",
     "mypy~=1.20",
+    "types-requests~=2.33.0",
 ]
 
 [project.scripts]
