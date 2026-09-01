@@ -55,15 +55,3 @@ version := `echo "from tomllib import load; print(load(open('pyproject.toml', 'r
 # Run nox
 @nox:
     pdm run nox --session test
-
-# Use uv to bump the patch version. Include `--dry-run` to see what would happen without actually bumping the version.
-@bump *ARGS:
-    uv version --bump patch {{ ARGS }}
-
-# Use uv to bump the minor version. Include `--dry-run` to see what would happen without actually bumping the version.
-@bump-minor *ARGS:
-    uv version --bump minor {{ ARGS }}
-
-# Use uv to bump the major version. Include `--dry-run` to see what would happen without actually bumping the version.
-@bump-major *ARGS:
-    uv version --bump major {{ ARGS }}
