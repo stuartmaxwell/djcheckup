@@ -124,25 +124,21 @@ result = run_checks("https://example.com")
 ```
 
 When using `djcheckup` programmatically, you can swap out the HTTP client with your own client with any specific
-configuration you require. By default, DJ Checkup uses the [HTTPXYZ](https://httpxyz.org/) library which is a fork of
-[HTTPX](https://www.python-httpx.org/). You can create your own client (either HTTPX or HTTPXYZ) with your own
-customisations and pass it to the `run_checks` method.
+configuration you require. By default, DJ Checkup uses the [Requests](https://requests.readthedocs.io/) library. You can
+create your own Requests session with custom configuration and pass it to the `run_checks` method.
 
 You can also change the output to return a JSON string response. See `api.py` for implementation details.
 
-A full example could look like the following, which uses a custom HTTPX client and returns JSON:
+A full example could look like the following, which uses a custom Requests session and returns JSON:
 
 ```python
-import httpx
+import requests
 from djcheckup import run_checks
 
 
-client = httpx.Client(
-    headers={"User-Agent": "My User Agent"},
-    timeout=10.0,
-    follow_redirects=True,
-    verify=True,
-)
+client = requests.Session()
+client.headers.update({"User-Agent": "My User Agent"})
+client.verify = True
 
 result = run_checks("https://example.com", client=client, output_format="json")
 
