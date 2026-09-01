@@ -1,29 +1,37 @@
 """Test the SiteChecker class and related functionality."""
 
-import httpxyz
-import pytest
+from urllib.parse import urlsplit, urlunsplit
 
-from djcheckup.checks import CheckResult, PathCheck, SeverityWeight, SiteChecker
+import pytest
+import requests
+from requests.models import PreparedRequest, Response
+
+from djcheckup.checks import CheckResult, PathCheck, RequestsClient, SeverityWeight, SiteChecker
+from tests.http import MockAdapter, create_mock_client, create_response
 
 url = "https://example.com"
+DEFAULT_TIMEOUT = 10.0
+CUSTOM_TIMEOUT = 5.0
 
 
-def mock_response(request: httpxyz.Request) -> httpxyz.Response:
+def mock_response(request: PreparedRequest) -> Response:
     """Return a fake response for any request."""
     # If the path matches /fail, raise a connection error
-    if request.url.path == "/fail":
+    if urlsplit(request.url).path == "/fail":
         msg = "Connection error."
-        raise httpxyz.ConnectError(msg)
-    return httpxyz.Response(
+        raise requests.ConnectionError(msg)
+    return create_response(
+        request,
         status_code=200,
         headers={"test-header-name": "test-header-value"},
         content="Test response content.",
     )
 
 
-def mock_response_404(request: httpxyz.Request) -> httpxyz.Response:
+def mock_response_404(request: PreparedRequest) -> Response:
     """Return a fake response for any request."""
-    return httpxyz.Response(
+    return create_response(
+        request,
         status_code=404,
         content="Page not found.",
     )
@@ -32,15 +40,13 @@ def mock_response_404(request: httpxyz.Request) -> httpxyz.Response:
 @pytest.fixture
 def mock_client_404():
     """Return a mock HTTP client."""
-    mock_transport = httpxyz.MockTransport(mock_response_404)
-    return httpxyz.Client(transport=mock_transport)
+    return create_mock_client(mock_response_404)
 
 
 @pytest.fixture
 def mock_client():
     """Return a mock HTTP client."""
-    mock_transport = httpxyz.MockTransport(mock_response)
-    return httpxyz.Client(transport=mock_transport)
+    return create_mock_client(mock_response)
 
 
 def test_first_check(mock_client):
@@ -95,25 +101,27 @@ def test_second_check_fails(mock_client):
 
 
 def test_sitechecker_init(mock_client, monkeypatch):
-    """Test the SiteChecker class when not getting a custom HTTPXYZ client passed to it."""
+    """Test the SiteChecker class when not getting a custom Requests client passed to it."""
 
-    def mock_httpxyz_client(*_args: object, **_kwargs: object) -> httpxyz.Client:
+    def mock_requests_client(*_args: object, **_kwargs: object) -> requests.Session:
         return mock_client
 
-    monkeypatch.setattr("httpxyz.Client", mock_httpxyz_client)
+    monkeypatch.setattr("djcheckup.checks.RequestsClient", mock_requests_client)
 
     checker = SiteChecker(url=url)
     assert checker._client_provided is False
+    adapter = checker.client.get_adapter(url)
+    assert isinstance(adapter, MockAdapter)
     checker.close()
-    assert checker.client.is_closed
+    assert adapter.closed is True
 
 
-def test_sitechecker_passes_verify_to_client(monkeypatch):
-    """Test that SiteChecker passes the verify parameter to HTTPXYZ.Client."""
+def test_sitechecker_passes_options_to_client(monkeypatch):
+    """Test that SiteChecker passes its request options to RequestsClient."""
     captured_kwargs = {}
 
     """
-    This `MockClient` pretends to be an HTTPXYZ client, but all it does is capture the kwargs passed to it.
+    This `MockClient` pretends to be a Requests client, but all it does is capture the kwargs passed to it.
     """
 
     class MockClient:
@@ -123,12 +131,13 @@ def test_sitechecker_passes_verify_to_client(monkeypatch):
         def close(self) -> None:
             pass
 
-    # Patch httpxyz.Client to capture arguments
-    monkeypatch.setattr("httpxyz.Client", MockClient)
+    monkeypatch.setattr("djcheckup.checks.RequestsClient", MockClient)
 
     # Test default (verify=True)
     captured_kwargs.clear()
     checker = SiteChecker(url=url)
+    assert captured_kwargs.get("timeout") == DEFAULT_TIMEOUT
+    assert captured_kwargs.get("follow_redirects") is True
     assert captured_kwargs.get("verify") is True
     checker.close()
 
@@ -137,3 +146,34 @@ def test_sitechecker_passes_verify_to_client(monkeypatch):
     checker = SiteChecker(url=url, verify=False)
     assert captured_kwargs.get("verify") is False
     checker.close()
+
+
+def test_requests_client_configuration():
+    """Test that the default Requests client stores DJ Checkup's request defaults."""
+    client = RequestsClient(timeout=CUSTOM_TIMEOUT, follow_redirects=False, verify=False)
+
+    def redirect_to_https(request: PreparedRequest) -> Response:
+        assert isinstance(request.url, str)
+        request_url = urlsplit(request.url)
+        return create_response(
+            request,
+            status_code=301,
+            headers={"Location": urlunsplit(request_url._replace(scheme="https"))},
+        )
+
+    adapter = MockAdapter(redirect_to_https)
+    client.mount("http://", adapter)
+
+    assert client.timeout == CUSTOM_TIMEOUT
+    assert client.follow_redirects is False
+    assert client.verify is False
+    assert client.headers["User-Agent"] == "DJCheckupBot/1.0 (+https://pypi.org/project/djcheckup/)"
+
+    response = client.get("http://example.com")
+
+    assert response.status_code == requests.codes.moved_permanently
+    assert response.history == []
+    assert adapter.last_timeout == CUSTOM_TIMEOUT
+    assert adapter.last_verify is False
+
+    client.close()

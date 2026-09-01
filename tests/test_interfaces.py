@@ -1,29 +1,34 @@
 """Tests for the CLI interface."""
 
-import httpxyz
+from urllib.parse import urlsplit, urlunsplit
+
 import pytest
+from requests.models import PreparedRequest, Response
 from typer.testing import CliRunner
 
 from djcheckup.api import run_checks
 from djcheckup.checks import SiteCheckResult
 from djcheckup.cli import app
+from tests.http import create_mock_client, create_response
 
 url = "https://example.com"
 
 
-def mock_perfect_site(request: httpxyz.Request) -> httpxyz.Response:
+def mock_perfect_site(request: PreparedRequest) -> Response:
     """Return a mock response that mimics a perfect Django site."""
-    if request.url.path in ["/admin", "/a/b/c/d/e/f/g/h/i/j/xyz/", "/accounts/login"]:
-        return httpxyz.Response(
+    request_url = urlsplit(request.url)
+    if request_url.path in ["/admin", "/a/b/c/d/e/f/g/h/i/j/xyz/", "/accounts/login"]:
+        return create_response(
+            request,
             status_code=404,
             content="Page not found.",
         )
 
-    if request.url.scheme == "http":
-        return httpxyz.Response(
+    if request_url.scheme == "http":
+        return create_response(
+            request,
             status_code=301,
-            headers={"Location": str(request.url.copy_with(scheme="https"))},
-            request=request,
+            headers={"Location": urlunsplit(request_url._replace(scheme="https"))},
         )
 
     headers = [
@@ -33,16 +38,18 @@ def mock_perfect_site(request: httpxyz.Request) -> httpxyz.Response:
         ("Set-Cookie", "sessionid=xxx; Path=/; HttpOnly; Secure; SameSite=Lax"),
     ]
 
-    return httpxyz.Response(
+    return create_response(
+        request,
         status_code=200,
         headers=headers,
         content="Test response content.",
     )
 
 
-def mock_response(request: httpxyz.Request) -> httpxyz.Response:
+def mock_response(request: PreparedRequest) -> Response:
     """Return a barebones mock response."""
-    return httpxyz.Response(
+    return create_response(
+        request,
         status_code=200,
         content="Test response content.",
     )
@@ -50,16 +57,14 @@ def mock_response(request: httpxyz.Request) -> httpxyz.Response:
 
 @pytest.fixture
 def mock_perfect_client():
-    """Return a mock HTTPXYZ client that returns a successful response with all cookies and headers."""
-    mock_transport = httpxyz.MockTransport(mock_perfect_site)
-    return httpxyz.Client(transport=mock_transport, follow_redirects=True)
+    """Return a mock Requests client that returns a successful response with all cookies and headers."""
+    return create_mock_client(mock_perfect_site)
 
 
 @pytest.fixture
 def mock_client():
-    """Return a mock HTTPXYZ client that returns a successful barebones response."""
-    mock_transport = httpxyz.MockTransport(mock_response)
-    return httpxyz.Client(transport=mock_transport, follow_redirects=True)
+    """Return a mock Requests client that returns a successful barebones response."""
+    return create_mock_client(mock_response)
 
 
 def test_cli(mock_perfect_client, monkeypatch):
@@ -67,7 +72,7 @@ def test_cli(mock_perfect_client, monkeypatch):
 
     # Mock the SiteChecker to use our mock client
     def mock_site_checker_init(self, url: str, **_kwargs: dict) -> None:
-        self.url = httpxyz.URL(url)
+        self.url = url
         self.client = mock_perfect_client
         self._client_provided = True
 
@@ -87,7 +92,7 @@ def test_cli_with_failures(mock_client, monkeypatch):
 
     # Mock the SiteChecker to use our mock client
     def mock_site_checker_init(self, url: str, **_kwargs: object) -> None:
-        self.url = httpxyz.URL(url)
+        self.url = url
         self.client = mock_client
         self._client_provided = True
 
@@ -150,7 +155,7 @@ def test_cli_json_output(mock_perfect_client, monkeypatch):
 
     # Mock the SiteChecker to use our mock client
     def mock_site_checker_init(self, url: str, **_kwargs: object) -> None:
-        self.url = httpxyz.URL(url)
+        self.url = url
         self.client = mock_perfect_client
         self._client_provided = True
 
